@@ -1,0 +1,14 @@
+---
+description: Escopo do orcamento-service
+alwaysApply: true
+---
+
+# Restrições do projeto (`orcamento-service`)
+
+- Escopo: orçamento e cobrança Pix (Mercado Pago Orders). Persistência em **Firestore** (database nomeado).
+- Publica `OrcamentoGerado`, `OrcamentoFalhou`, `CobrancaGerada`, `PagamentoConfirmado`, `PagamentoRecusado` e um tópico de notificações sem consumidor.
+- Consome `DiagnosticoFinalizado`, `OrdemServicoFinalizada` e `OrdemServicoDescartada`.
+- Webhook em `/orcamento/webhook/mercado-pago`.
+- Não é dono de ordem de serviço, estoque, catálogo administrativo nem emissão de JWT.
+- Não inventar features fora desse escopo.
+- README autocontido: sem referências a pastas fora do Git nem a numeração de documentos pessoais.

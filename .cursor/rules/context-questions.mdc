@@ -1,0 +1,12 @@
+---
+description: Nunca assumir contexto; perguntar antes de decisões ambíguas
+alwaysApply: true
+---
+
+# Contexto e perguntas
+
+- Nunca assumir requisitos, escopo, domínio ou trade-offs quando estiverem ambíguos ou incompletos.
+- Antes de mudar contrato HTTP, eventos publicados ou consumidos, ou persistência: explicitar a dúvida e perguntar.
+- Não inventar features fora do escopo deste repositório.
+- Preferir 1–2 perguntas críticas por vez; propor opções concretas quando houver caminhos válidos distintos.
+- Só seguir com um default sensato depois que o usuário confirmar ou quando o canon deste repositório (README e, quando existirem, `docs/adrs/`) já fechar a decisão.

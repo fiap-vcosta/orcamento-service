@@ -1,0 +1,19 @@
+---
+description: Layout alvo do serviço .NET quando o código chegar
+alwaysApply: true
+---
+
+# Layout (`orcamento-service`)
+
+Quando o código chegar, o alvo é:
+
+- `src/Domain` — entidades e regras, sem ORM, HTTP ou host
+- `src/Application` — casos de uso; fala com o exterior só por ports
+- `src/Infrastructure` — persistência e integrações; implementa ports
+- `src/Api` — HTTP na borda
+- `tests/` espelhando `src/`
+- `k8s/`, `terraform/`, `Dockerfile`, `docker-compose.yml`
+
+Dependências da Clean Architecture apontam para dentro: Api → Application → Domain; Infrastructure implementa ports.
+
+Sem comentários narrativos em C#.
