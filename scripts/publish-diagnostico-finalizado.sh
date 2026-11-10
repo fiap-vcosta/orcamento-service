@@ -12,6 +12,10 @@ DOCUMENTO="${DOCUMENTO:-86421537090}"
 EVENT_ID="${EVENT_ID:-$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)}"
 OCCURRED_AT="${OCCURRED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 
+export PUBSUB_EMULATOR_HOST="${HOST}"
+export CLOUDSDK_CORE_PROJECT="${PROJECT}"
+export CLOUDSDK_AUTH_DISABLE_CREDENTIALS=true
+
 BODY=$(cat <<EOF
 {
   "eventId": "${EVENT_ID}",
@@ -39,12 +43,9 @@ BODY=$(cat <<EOF
 EOF
 )
 
-DATA_B64="$(printf '%s' "$BODY" | base64 -w0 2>/dev/null || printf '%s' "$BODY" | base64)"
+gcloud pubsub topics publish "${TOPIC}" \
+  --project="${PROJECT}" \
+  --message="${BODY}" \
+  --attribute=eventType=DiagnosticoFinalizado
 
-curl -sS -X POST \
-  "http://${HOST}/v1/projects/${PROJECT}/topics/${TOPIC}:publish" \
-  -H 'Content-Type: application/json' \
-  -d "{\"messages\":[{\"data\":\"${DATA_B64}\",\"attributes\":{\"eventType\":\"DiagnosticoFinalizado\"}}]}"
-
-echo
 echo "Published DiagnosticoFinalizado eventId=${EVENT_ID} ordemServicoId=${ORDEM_ID} versao=${VERSAO}"

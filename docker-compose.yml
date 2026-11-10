@@ -24,12 +24,14 @@ services:
       - "8088:8085"
 
   pubsub-init:
-    image: curlimages/curl:8.12.1
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
     depends_on:
       - pubsub
     environment:
       PUBSUB_EMULATOR_HOST: pubsub:8085
       PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-local-orcamento}
+      CLOUDSDK_CORE_PROJECT: ${PUBSUB_PROJECT_ID:-local-orcamento}
+      CLOUDSDK_AUTH_DISABLE_CREDENTIALS: "true"
     volumes:
       - ./scripts/init-pubsub-emulator.sh:/init-pubsub-emulator.sh:ro
     entrypoint: ["/bin/sh", "/init-pubsub-emulator.sh"]

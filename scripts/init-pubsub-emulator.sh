@@ -3,46 +3,38 @@ set -eu
 
 HOST="${PUBSUB_EMULATOR_HOST:-127.0.0.1:8088}"
 PROJECT="${PUBSUB_PROJECT_ID:-local-orcamento}"
-BASE="http://${HOST}/v1/projects/${PROJECT}"
+export PUBSUB_EMULATOR_HOST="${HOST}"
+export CLOUDSDK_CORE_PROJECT="${PROJECT}"
+export CLOUDSDK_AUTH_DISABLE_CREDENTIALS=true
 
 echo "Waiting for Pub/Sub emulator at ${HOST}..."
 i=0
 while [ "$i" -lt 60 ]; do
-  if curl -fsS "${BASE}/topics" >/dev/null 2>&1; then
+  if gcloud pubsub topics list --project="${PROJECT}" --format='value(name)' >/dev/null 2>&1; then
     break
   fi
   i=$((i + 1))
   sleep 1
 done
-curl -fsS "${BASE}/topics" >/dev/null
+gcloud pubsub topics list --project="${PROJECT}" --format='value(name)' >/dev/null
 
 create_topic() {
   topic="$1"
-  code="$(curl -sS -o /dev/null -w '%{http_code}' -X PUT "${BASE}/topics/${topic}" \
-    -H 'Content-Type: application/json' \
-    -d '{}')"
-  case "$code" in
-    200|409) ;;
-    *)
-      echo "Failed to create topic ${topic}: HTTP ${code}" >&2
-      exit 1
-      ;;
-  esac
+  if gcloud pubsub topics describe "${topic}" --project="${PROJECT}" >/dev/null 2>&1; then
+    return 0
+  fi
+  gcloud pubsub topics create "${topic}" --project="${PROJECT}"
 }
 
 create_subscription() {
   subscription="$1"
   topic="$2"
-  code="$(curl -sS -o /dev/null -w '%{http_code}' -X PUT "${BASE}/subscriptions/${subscription}" \
-    -H 'Content-Type: application/json' \
-    -d "{\"topic\":\"projects/${PROJECT}/topics/${topic}\"}")"
-  case "$code" in
-    200|409) ;;
-    *)
-      echo "Failed to create subscription ${subscription}: HTTP ${code}" >&2
-      exit 1
-      ;;
-  esac
+  if gcloud pubsub subscriptions describe "${subscription}" --project="${PROJECT}" >/dev/null 2>&1; then
+    return 0
+  fi
+  gcloud pubsub subscriptions create "${subscription}" \
+    --topic="${topic}" \
+    --project="${PROJECT}"
 }
 
 for topic in \
