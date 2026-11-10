@@ -110,9 +110,10 @@
           "pathVariables": [],
           "body": {
             "contentType": "raw",
-            "raw": "{\n  \"data\": {\n    \"id\": \"{{dataId}}\"\n  }\n}"
+            "raw": "{\n  \"data\": {\n    \"id\": \"{{dataId}}\"\n  }\n}",
+            "rawContentType": "application/json"
           },
-          "contentType": "application/json"
+          "contentType": "raw"
         },
         "auth": {
           "type": "inherit"
