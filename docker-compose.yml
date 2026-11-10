@@ -1,0 +1,75 @@
+services:
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: >
+      gcloud beta emulators firestore start
+      --host-port=0.0.0.0:8080
+      --project=${FIRESTORE_PROJECT_ID:?FIRESTORE_PROJECT_ID is required}
+    ports:
+      - "8087:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: >
+      gcloud beta emulators pubsub start
+      --host-port=0.0.0.0:8085
+      --project=${PUBSUB_PROJECT_ID:-local-orcamento}
+    ports:
+      - "8088:8085"
+
+  pubsub-init:
+    image: curlimages/curl:8.12.1
+    depends_on:
+      - pubsub
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      PUBSUB_PROJECT_ID: ${PUBSUB_PROJECT_ID:-local-orcamento}
+    volumes:
+      - ./scripts/init-pubsub-emulator.sh:/init-pubsub-emulator.sh:ro
+    entrypoint: ["/bin/sh", "/init-pubsub-emulator.sh"]
+    restart: "no"
+
+  api:
+    profiles:
+      - app
+    build:
+      context: .
+      secrets:
+        - nuget_token
+    ports:
+      - "8084:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:?ASPNETCORE_ENVIRONMENT is required}
+      FIRESTORE_EMULATOR_HOST: firestore:8080
+      Firestore__ProjectId: ${FIRESTORE_PROJECT_ID:?FIRESTORE_PROJECT_ID is required}
+      Firestore__DatabaseId: "(default)"
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      PubSub__ProjectId: ${PUBSUB_PROJECT_ID:-local-orcamento}
+      PubSub__UseInMemory: "false"
+      PubSub__EnableWorkers: "true"
+      MercadoPago__AccessToken: ${MERCADO_PAGO_ACCESS_TOKEN:-}
+      MercadoPago__WebhookSecret: ${MERCADO_PAGO_WEBHOOK_SECRET:-}
+      MercadoPago__BaseUrl: ${MERCADO_PAGO_BASE_URL:-https://api.mercadopago.com}
+      MercadoPago__ExpirationTime: ${MERCADO_PAGO_EXPIRATION_TIME:-PT60S}
+      DD_SERVICE: orcamento-service
+      DD_ENV: local
+      DD_LOGS_INJECTION: "true"
+      DD_API_KEY: ${DD_API_KEY:-}
+      DD_SITE: ${DD_SITE:-datadoghq.com}
+      DD_AGENT_HOST: ${DD_AGENT_HOST:-127.0.0.1}
+    depends_on:
+      firestore:
+        condition: service_healthy
+      pubsub-init:
+        condition: service_completed_successfully
+
+secrets:
+  nuget_token:
+    environment: NUGET_AUTH_TOKEN

@@ -1,0 +1,36 @@
+# Git / CI / agent tooling
+.git
+.github
+.cursor
+
+# IDEs
+.vs
+.idea
+*.user
+*.suo
+
+# Docs and tests (not needed in the image)
+docs
+tests
+scripts
+
+# .NET build artifacts
+**/bin
+**/obj
+
+# Test results / coverage
+**/TestResults
+**/coverage*
+
+# Markdown
+*.md
+
+# Secrets / local env (keep .env.example in context if present)
+.env
+.env.*
+!.env.example
+.local/
+
+# OS
+**/.DS_Store
+**/Thumbs.db
