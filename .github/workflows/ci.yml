@@ -1,0 +1,18 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dotnet:
+    uses: fiap-vcosta/actions/.github/workflows/ci-dotnet.yml@main
+    permissions:
+      contents: read
+      packages: read
+    with:
+      sonar_project_key: fiap-vcosta_orcamento-service
+      enable_github_packages: true
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
