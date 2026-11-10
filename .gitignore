@@ -1,0 +1,76 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.tmp
+*.temp
+*.swp
+*.bak
+*.orig
+*.rej
+*.vs/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# NuGet
+packages/
+*.nupkg
+.nuget/
+
+# Docker
+docker-compose.override.yml
+.env
+
+# Local JWT keys
+.local/
+
+# IDEs
+.idea/
+*.sln.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Test results
+test-results/
+tests/UnitTests/TestResults/
+*.trx
+coverage.cobertura.xml
+**/coverage/
+inspectcode.sarif.json
+
+# SonarQube
+.scannerwork/
+.sonarqube/
+
+# Build outputs
+publish/
+build/
+
+# Kubernetes
+kubeconfig*
+*.rendered.yaml
+k8s/secret.yaml
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
