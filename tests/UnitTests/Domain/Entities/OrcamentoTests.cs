@@ -39,7 +39,7 @@ public class OrcamentoTests
     public void Criar_SemServicos_GeraTotalZero()
     {
         // Arrange
-        var servicos = new List<OrcamentoServico>();
+        OrcamentoServico[] servicos = [];
 
         // Act
         var orcamento = Orcamento.Criar(1, 1, Cliente, servicos);

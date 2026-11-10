@@ -51,10 +51,8 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
             }
         };
 
-        using var message = new HttpRequestMessage(HttpMethod.Post, "v1/orders")
-        {
-            Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json")
-        };
+        using var message = new HttpRequestMessage(HttpMethod.Post, "v1/orders");
+        message.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
         message.Headers.Add(IdempotencyHeader, request.IdempotencyKey);
 
         using var response = await httpClient.SendAsync(message, cancellationToken);
