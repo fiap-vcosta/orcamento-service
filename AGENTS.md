@@ -18,7 +18,7 @@ Serviço de orçamento e cobrança Pix (Mercado Pago Orders). Org [fiap-vcosta](
 | `src/Api` | Webhook `/orcamento/webhook/mercado-pago`, health |
 | `tests/UnitTests` | Gate Coverlet 80% |
 | `tests/IntegrationTests` | HTTP + fakes |
-| `terraform/` | Firestore nomeado + SM MP + subscriptions/DLQ |
+| `terraform/` | Firestore nomeado + subscriptions/DLQ |
 | `k8s/` | Deployment (Datadog), Service, HPA, KSA, HTTPRoute `/orcamento` |
 
 ## Fora de escopo

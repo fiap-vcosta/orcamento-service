@@ -45,7 +45,7 @@ Webhook assinado (Requestly): manifest `id:{dataId};request-id:{xRequestId};ts:{
 
 Requestly: importar [`docs/requestly/orcamento.requestly.json`](docs/requestly/orcamento.requestly.json).
 
-Credenciais de sandbox do Mercado Pago ficam no `.env` local e, na GCP, em Secret Manager — nunca no Git.
+Credenciais de sandbox do Mercado Pago ficam no `.env` local e, na GCP, em org secrets do GitHub (`MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET`) — nunca no Git.
 
 ## Testes
 
@@ -76,32 +76,24 @@ Root module: [`terraform/`](terraform/). State GCS prefix `orcamento-service`.
 | Recurso | Papel |
 |---------|--------|
 | Firestore database `orcamento` | Persistência de orçamentos e cobranças |
-| SM `orcamento-service-mercado-pago-access-token` | `MercadoPago__AccessToken` (TF cria o secret; humano adiciona a versão) |
-| SM `orcamento-service-mercado-pago-webhook-secret` | `MercadoPago__WebhookSecret` (idem) |
 | Subscriptions + DLQ | `orcamento-diagnostico-finalizado`, `orcamento-ordem-servico-finalizada`, `orcamento-ordem-servico-descartada` |
 | Publisher IAM | tópicos de orçamento/cobrança/pagamento + `notificacoes` |
 | `orcamento-notificacoes-inspecao` | inspeção no tópico `notificacoes` (retenção 1 dia, sem worker) |
-
-Após o `tf-apply`:
-
-```bash
-printf '%s' 'APP_USR-…' | gcloud secrets versions add orcamento-service-mercado-pago-access-token --data-file=-
-printf '%s' 'whsec-…' | gcloud secrets versions add orcamento-service-mercado-pago-webhook-secret --data-file=-
-```
 
 ## CD (GCP)
 
 | Workflow | Gatilho | Papel |
 |----------|---------|--------|
 | `build-push` | push em `main` | Imagem no Artifact Registry |
-| `tf-apply` / `tf-destroy` | `workflow_dispatch` | Firestore + SM + Pub/Sub |
-| `deploy` | `workflow_dispatch` | Secret k8s (SM MP + org) + manifests + smoke |
+| `tf-apply` / `tf-destroy` | `workflow_dispatch` | Firestore + Pub/Sub |
+| `deploy` | `workflow_dispatch` | Secret k8s (org: MP + DD + service key) + manifests + smoke |
 
 Pré-requisitos do `deploy`:
 
 1. Cluster + Gateway do [`infra-k8s`](https://github.com/fiap-vcosta/infra-k8s) no ar
 2. Tópicos do [`infra-events`](https://github.com/fiap-vcosta/infra-events)
-3. `tf-apply` deste repo + versões nos dois secrets MP
-4. Imagem publicada pelo `build-push`
+3. `tf-apply` deste repo
+4. Org secrets `MERCADO_PAGO_ACCESS_TOKEN` e `MERCADO_PAGO_WEBHOOK_SECRET` (antes do Pix na demo)
+5. Imagem publicada pelo `build-push`
 
 Smoke: `https://vcosta-fiap.online/orcamento/health`. O `HTTPRoute` expõe `/orcamento` (webhook incluso).
