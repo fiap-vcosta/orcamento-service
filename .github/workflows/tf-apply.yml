@@ -1,0 +1,16 @@
+name: tf-apply
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: terraform-orcamento-service
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    uses: fiap-vcosta/actions/.github/workflows/tf-apply.yml@main

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orcamento-service
+  namespace: tech-challenge
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080" # NOSONAR
+  Firestore__ProjectId: "vcosta-fiap-tech-challenge"
+  Firestore__DatabaseId: "orcamento"
+  PubSub__ProjectId: "vcosta-fiap-tech-challenge"
+  PubSub__UseInMemory: "false"
+  PubSub__EnableWorkers: "true"
+  PubSub__Subscriptions__DiagnosticoFinalizado: "orcamento-diagnostico-finalizado"
+  PubSub__Subscriptions__OrdemServicoFinalizada: "orcamento-ordem-servico-finalizada"
+  PubSub__Subscriptions__OrdemServicoDescartada: "orcamento-ordem-servico-descartada"
+  MercadoPago__BaseUrl: "https://api.mercadopago.com"
+  MercadoPago__ExpirationTime: "PT60S"
+  DD_SERVICE: "orcamento-service"
+  DD_ENV: "prod"
+  DD_AGENT_HOST: "127.0.0.1"
+  DD_TRACE_AGENT_PORT: "8126"
+  DD_LOGS_INJECTION: "true"
+  DD_RUNTIME_METRICS_ENABLED: "true"
+  DD_TRACE_SAMPLE_RATE: "1"
+  DD_SITE: "${DD_SITE}"
+  CORECLR_ENABLE_PROFILING: "1"
+  CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+  CORECLR_PROFILER_PATH: "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+  DD_DOTNET_TRACER_HOME: "/app/datadog"
+  LD_LIBRARY_PATH: "/app/datadog/linux-x64"

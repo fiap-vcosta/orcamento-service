@@ -35,24 +35,17 @@ Portas do Compose: API `8084`, Firestore host `8087`, Pub/Sub host `8088`.
 
 Localmente o Firestore usa o database `(default)` do emulador. Na GCP o database nomeado é `orcamento`.
 
-No Compose/`dotnet run` local, Pub/Sub sobe com `UseInMemory=true` e `EnableWorkers=false` (mesmo padrão de estoque/OS): health e webhook funcionam; o fluxo de `DiagnosticoFinalizado` fica nos testes/GCP. O emulador em `:8088` e o `pubsub-init` ficam prontos para quando o `building-blocks` passar a honrar `PUBSUB_EMULATOR_HOST` (`EmulatorDetection`).
+Workers Pub/Sub usam o emulador (`PUBSUB_EMULATOR_HOST`; `building-blocks` ≥ 1.1.1). Prova rápida:
+
+```bash
+./scripts/publish-diagnostico-finalizado.sh
+```
 
 Webhook assinado (Requestly): manifest `id:{dataId};request-id:{xRequestId};ts:{ts};` com `dataId` em minúsculas; `x-signature` = `ts={ts},v1={hmac_sha256_hex(secret, manifest)}`. Preencha `webhookSecret` e `xSignature` só na UI — valores vazios no JSON commitado.
 
-```bash
-# exemplo (secret local de teste)
-DATA_ID=ord_test
-REQUEST_ID=req-local-1
-TS=1742505638683
-SECRET='seu-segredo'
-MANIFEST="id:${DATA_ID};request-id:${REQUEST_ID};ts:${TS};"
-V1=$(printf '%s' "$MANIFEST" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $2}')
-echo "ts=${TS},v1=${V1}"
-```
-
 Requestly: importar [`docs/requestly/orcamento.requestly.json`](docs/requestly/orcamento.requestly.json).
 
-Credenciais de sandbox do Mercado Pago (`MERCADO_PAGO_ACCESS_TOKEN` / `MERCADO_PAGO_WEBHOOK_SECRET`) ficam no `.env` — nunca no Git. Cobrança Pix e webhook real só fazem sentido com o token preenchido.
+Credenciais de sandbox do Mercado Pago ficam no `.env` local e, na GCP, em Secret Manager — nunca no Git.
 
 ## Testes
 
@@ -69,6 +62,46 @@ dotnet test tests/UnitTests/UnitTests.csproj -c Release \
 dotnet test tests/IntegrationTests/IntegrationTests.csproj -c Release
 ```
 
-Restore do pacote `building-blocks` exige PAT `read:packages` (`NUGET_AUTH_TOKEN`) e o `nuget.config` deste repositório.
+## CI
 
-Swagger: `http://localhost:8080/swagger` (`dotnet run`) ou `http://localhost:8084/swagger` (Compose).
+Callers dos reusables em [`fiap-vcosta/actions`](https://github.com/fiap-vcosta/actions):
+
+- **dotnet** — InspectCode, unit (gate 80%), integração, SonarCloud (`fiap-vcosta_orcamento-service`)
+- **terraform** — `fmt` / `validate` no root `terraform/`
+
+## Terraform (GCP)
+
+Root module: [`terraform/`](terraform/). State GCS prefix `orcamento-service`.
+
+| Recurso | Papel |
+|---------|--------|
+| Firestore database `orcamento` | Persistência de orçamentos e cobranças |
+| SM `orcamento-service-mercado-pago-access-token` | `MercadoPago__AccessToken` (TF cria o secret; humano adiciona a versão) |
+| SM `orcamento-service-mercado-pago-webhook-secret` | `MercadoPago__WebhookSecret` (idem) |
+| Subscriptions + DLQ | `orcamento-diagnostico-finalizado`, `orcamento-ordem-servico-finalizada`, `orcamento-ordem-servico-descartada` |
+| Publisher IAM | tópicos de orçamento/cobrança/pagamento + `notificacoes` |
+| `orcamento-notificacoes-inspecao` | inspeção no tópico `notificacoes` (retenção 1 dia, sem worker) |
+
+Após o `tf-apply`:
+
+```bash
+printf '%s' 'APP_USR-…' | gcloud secrets versions add orcamento-service-mercado-pago-access-token --data-file=-
+printf '%s' 'whsec-…' | gcloud secrets versions add orcamento-service-mercado-pago-webhook-secret --data-file=-
+```
+
+## CD (GCP)
+
+| Workflow | Gatilho | Papel |
+|----------|---------|--------|
+| `build-push` | push em `main` | Imagem no Artifact Registry |
+| `tf-apply` / `tf-destroy` | `workflow_dispatch` | Firestore + SM + Pub/Sub |
+| `deploy` | `workflow_dispatch` | Secret k8s (SM MP + org) + manifests + smoke |
+
+Pré-requisitos do `deploy`:
+
+1. Cluster + Gateway do [`infra-k8s`](https://github.com/fiap-vcosta/infra-k8s) no ar
+2. Tópicos do [`infra-events`](https://github.com/fiap-vcosta/infra-events)
+3. `tf-apply` deste repo + versões nos dois secrets MP
+4. Imagem publicada pelo `build-push`
+
+Smoke: `https://vcosta-fiap.online/orcamento/health`. O `HTTPRoute` expõe `/orcamento` (webhook incluso).

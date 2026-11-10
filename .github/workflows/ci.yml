@@ -16,3 +16,10 @@ jobs:
       enable_github_packages: true
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  terraform:
+    uses: fiap-vcosta/actions/.github/workflows/ci-terraform.yml@main
+    permissions:
+      contents: read
+    with:
+      run_plan: false

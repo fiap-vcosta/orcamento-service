@@ -1,0 +1,21 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    uses: fiap-vcosta/actions/.github/workflows/deploy.yml@main
+    with:
+      image_name: orcamento-service
+      deployment_name: orcamento-service
+      smoke_url: https://vcosta-fiap.online/orcamento/health
+      mercado_pago_access_token_sm_secret: orcamento-service-mercado-pago-access-token
+      mercado_pago_webhook_secret_sm_secret: orcamento-service-mercado-pago-webhook-secret
+    secrets:
+      DD_API_KEY: ${{ secrets.DD_API_KEY }}
+      SERVICE_AUTH_KEY: ${{ secrets.SERVICE_AUTH_KEY }}
