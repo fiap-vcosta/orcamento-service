@@ -1,0 +1,16 @@
+name: build-push
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+jobs:
+  build-push:
+    uses: fiap-vcosta/actions/.github/workflows/build-push.yml@main
+    with:
+      image_name: orcamento-service

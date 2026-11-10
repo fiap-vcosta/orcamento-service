@@ -54,8 +54,8 @@ services:
       Firestore__DatabaseId: "(default)"
       PUBSUB_EMULATOR_HOST: pubsub:8085
       PubSub__ProjectId: ${PUBSUB_PROJECT_ID:-local-orcamento}
-      PubSub__UseInMemory: "true"
-      PubSub__EnableWorkers: "false"
+      PubSub__UseInMemory: "false"
+      PubSub__EnableWorkers: "true"
       MercadoPago__AccessToken: ${MERCADO_PAGO_ACCESS_TOKEN:-}
       MercadoPago__WebhookSecret: ${MERCADO_PAGO_WEBHOOK_SECRET:-}
       MercadoPago__BaseUrl: ${MERCADO_PAGO_BASE_URL:-https://api.mercadopago.com}
