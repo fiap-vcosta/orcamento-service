@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "version": "1.1.0",
+    "exportedAt": "2026-11-10T00:00:00.000Z",
+    "exportedUsing": "Requestly API Client"
+  },
+  "records": [
+    {
+      "id": "o1000001-0000-4000-8000-000000000001",
+      "name": "orcamento-service",
+      "type": "collection",
+      "parentId": null,
+      "deleted": false,
+      "data": {
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a0",
+      "description": "Health e webhook Mercado Pago. Preencha webhookSecret / xSignature na UI (nunca no Git). Environments: Docker (:8084), Local (:8080), GCP Gateway."
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000010",
+      "name": "01-health",
+      "type": "collection",
+      "parentId": "o1000001-0000-4000-8000-000000000001",
+      "deleted": false,
+      "data": {
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a0",
+      "description": "Health check (sem auth)."
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000011",
+      "name": "health",
+      "type": "api",
+      "parentId": "o1000001-0000-4000-8000-000000000010",
+      "deleted": false,
+      "data": {
+        "type": "http",
+        "request": {
+          "url": "{{baseUrl}}/orcamento/health",
+          "method": "GET",
+          "headers": [],
+          "queryParams": [],
+          "pathVariables": [],
+          "body": {
+            "contentType": "none"
+          },
+          "contentType": "none"
+        },
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a0"
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000020",
+      "name": "02-webhook",
+      "type": "collection",
+      "parentId": "o1000001-0000-4000-8000-000000000001",
+      "deleted": false,
+      "data": {
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a1",
+      "description": "POST /orcamento/webhook/mercado-pago. Manifest: id:{dataId};request-id:{xRequestId};ts:{ts}; — HMAC-SHA256 hex em xSignature (ts=…,v1=…)."
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000021",
+      "name": "webhook mercado-pago",
+      "type": "api",
+      "parentId": "o1000001-0000-4000-8000-000000000020",
+      "deleted": false,
+      "data": {
+        "type": "http",
+        "request": {
+          "url": "{{baseUrl}}/orcamento/webhook/mercado-pago",
+          "method": "POST",
+          "headers": [
+            {
+              "id": 1,
+              "key": "Content-Type",
+              "value": "application/json",
+              "isEnabled": true,
+              "description": ""
+            },
+            {
+              "id": 2,
+              "key": "x-signature",
+              "value": "{{xSignature}}",
+              "isEnabled": true,
+              "description": ""
+            },
+            {
+              "id": 3,
+              "key": "x-request-id",
+              "value": "{{xRequestId}}",
+              "isEnabled": true,
+              "description": ""
+            }
+          ],
+          "queryParams": [],
+          "pathVariables": [],
+          "body": {
+            "contentType": "raw",
+            "raw": "{\n  \"data\": {\n    \"id\": \"{{dataId}}\"\n  }\n}",
+            "rawContentType": "application/json"
+          },
+          "contentType": "raw"
+        },
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a0"
+    }
+  ],
+  "environments": [
+    {
+      "id": "o1000001-0000-4000-8000-0000000000e1",
+      "name": "Docker",
+      "variables": {
+        "baseUrl": {
+          "type": "string",
+          "syncValue": "http://localhost:8084"
+        },
+        "webhookSecret": {
+          "type": "secret",
+          "syncValue": ""
+        },
+        "dataId": {
+          "type": "string",
+          "syncValue": "ORD_TEST"
+        },
+        "xRequestId": {
+          "type": "string",
+          "syncValue": "req-local-1"
+        },
+        "ts": {
+          "type": "string",
+          "syncValue": "1742505638683"
+        },
+        "xSignature": {
+          "type": "secret",
+          "syncValue": ""
+        }
+      }
+    },
+    {
+      "id": "o1000001-0000-4000-8000-0000000000e2",
+      "name": "Local",
+      "variables": {
+        "baseUrl": {
+          "type": "string",
+          "syncValue": "http://localhost:8080"
+        },
+        "webhookSecret": {
+          "type": "secret",
+          "syncValue": ""
+        },
+        "dataId": {
+          "type": "string",
+          "syncValue": "ORD_TEST"
+        },
+        "xRequestId": {
+          "type": "string",
+          "syncValue": "req-local-1"
+        },
+        "ts": {
+          "type": "string",
+          "syncValue": "1742505638683"
+        },
+        "xSignature": {
+          "type": "secret",
+          "syncValue": ""
+        }
+      }
+    },
+    {
+      "id": "o1000001-0000-4000-8000-0000000000e3",
+      "name": "GCP",
+      "variables": {
+        "baseUrl": {
+          "type": "string",
+          "syncValue": "https://vcosta-fiap.online"
+        },
+        "webhookSecret": {
+          "type": "secret",
+          "syncValue": ""
+        },
+        "dataId": {
+          "type": "string",
+          "syncValue": ""
+        },
+        "xRequestId": {
+          "type": "string",
+          "syncValue": ""
+        },
+        "ts": {
+          "type": "string",
+          "syncValue": ""
+        },
+        "xSignature": {
+          "type": "secret",
+          "syncValue": ""
+        }
+      }
+    }
+  ],
+  "packages": []
+}
