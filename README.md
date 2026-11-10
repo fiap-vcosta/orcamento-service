@@ -35,12 +35,7 @@ Portas do Compose: API `8084`, Firestore host `8087`, Pub/Sub host `8088`.
 
 Localmente o Firestore usa o database `(default)` do emulador. Na GCP o database nomeado é `orcamento`.
 
-Prova rápida de orçamento (sem Mercado Pago):
-
-```bash
-./scripts/publish-diagnostico-finalizado.sh
-# logs da API / pull na subscription de inspeção → OrcamentoGerado
-```
+No Compose/`dotnet run` local, Pub/Sub sobe com `UseInMemory=true` e `EnableWorkers=false` (mesmo padrão de estoque/OS): health e webhook funcionam; o fluxo de `DiagnosticoFinalizado` fica nos testes/GCP. O emulador em `:8088` e o `pubsub-init` ficam prontos para quando o `building-blocks` passar a honrar `PUBSUB_EMULATOR_HOST` (`EmulatorDetection`).
 
 Webhook assinado (Requestly): manifest `id:{dataId};request-id:{xRequestId};ts:{ts};` com `dataId` em minúsculas; `x-signature` = `ts={ts},v1={hmac_sha256_hex(secret, manifest)}`. Preencha `webhookSecret` e `xSignature` só na UI — valores vazios no JSON commitado.
 
