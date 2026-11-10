@@ -14,8 +14,8 @@ jobs:
       image_name: orcamento-service
       deployment_name: orcamento-service
       smoke_url: https://vcosta-fiap.online/orcamento/health
-      mercado_pago_access_token_sm_secret: orcamento-service-mercado-pago-access-token
-      mercado_pago_webhook_secret_sm_secret: orcamento-service-mercado-pago-webhook-secret
     secrets:
       DD_API_KEY: ${{ secrets.DD_API_KEY }}
       SERVICE_AUTH_KEY: ${{ secrets.SERVICE_AUTH_KEY }}
+      MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.MERCADO_PAGO_ACCESS_TOKEN }}
+      MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.MERCADO_PAGO_WEBHOOK_SECRET }}
