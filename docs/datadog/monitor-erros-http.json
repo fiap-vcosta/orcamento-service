@@ -1,0 +1,22 @@
+{
+  "name": "demo \u2014 erros HTTP (orcamento-service)",
+  "type": "query alert",
+  "query": "sum(last_10m):sum:trace.aspnet_core.request.errors{service:orcamento-service,env:prod}.as_count() > 5",
+  "message": "{{#is_alert}}Erros HTTP APM (`service:orcamento-service`, `env:prod`) acima do limiar na janela da demo.{{/is_alert}}\n{{#is_recovery}}Erros HTTP voltaram ao normal.{{/is_recovery}}",
+  "tags": [
+    "service:orcamento-service",
+    "env:prod",
+    "demo:tech-challenge"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 5
+    },
+    "notify_no_data": false,
+    "require_full_window": false,
+    "include_tags": true,
+    "new_host_delay": 300,
+    "notify_audit": false
+  },
+  "priority": 3
+}

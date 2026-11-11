@@ -1,0 +1,134 @@
+{
+  "title": "Tech Challenge \u2014 orcamento-service (demo)",
+  "description": "Dashboard do servi\u00e7o `orcamento-service` na janela de demo (APM + logs). Dashboard geral da Saga: e2e/docs/datadog/.",
+  "layout_type": "ordered",
+  "reflow_type": "auto",
+  "widgets": [
+    {
+      "definition": {
+        "title": "Lat\u00eancia p95 (APM)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "p95:trace.aspnet_core.request{service:orcamento-service,env:prod}",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Erros HTTP (APM)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:trace.aspnet_core.request.errors{service:orcamento-service,env:prod}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Hits HTTP (APM)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:trace.aspnet_core.request.hits{service:orcamento-service,env:prod}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Runtime .NET \u2014 CPU %",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:runtime.dotnet.cpu.percent{service:orcamento-service,env:prod}",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Runtime .NET \u2014 mem\u00f3ria committed",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "avg:runtime.dotnet.mem.committed{service:orcamento-service,env:prod}",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Falha ao gravar or\u00e7amento",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "queries": [
+              {
+                "data_source": "logs",
+                "name": "query1",
+                "indexes": [
+                  "*"
+                ],
+                "compute": {
+                  "aggregation": "count"
+                },
+                "group_by": [],
+                "search": {
+                  "query": "service:orcamento-service env:prod \"Falha ao gravar or\u00e7amento\""
+                }
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Pub/Sub nack (worker)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "queries": [
+              {
+                "data_source": "logs",
+                "name": "query1",
+                "indexes": [
+                  "*"
+                ],
+                "compute": {
+                  "aggregation": "count"
+                },
+                "group_by": [],
+                "search": {
+                  "query": "service:orcamento-service env:prod \"Failed to process Pub/Sub message\""
+                }
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "query1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
