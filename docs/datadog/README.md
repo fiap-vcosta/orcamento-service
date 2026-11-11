@@ -28,5 +28,6 @@ Logs JSON com `DD_LOGS_INJECTION=true` levam `dd.trace_id` → **View Trace**.
 
 ## Grupos do dashboard
 
-Cores por tipo: **Monitores** (purple), **Aplicação** (vivid_blue), **Eventos de entrada** (orange), **Eventos de saída** (green), **Dead-letter** (pink), **Banco** (gray), **Insights de negócio** (yellow).
-O grupo Monitores usa widget `manage_status` com query `name:[orcamento]*` (importe os monitores deste repo antes).
+Cores por tipo (só grupos com conteúdo): **Monitores** (purple), **APIs / golden metrics** (vivid_blue), **Aplicação** (blue), **Eventos de entrada** (orange), **Eventos de saída** (green), **Dead-letter** (pink), **Banco** (gray — Cloud SQL ou Firestore), **Insights de negócio** (yellow).
+O grupo Monitores usa `manage_status` com `name:[orcamento]*`. Grupos sem dados (ex.: Pub/Sub/DLQ/negócio) são omitidos.
+
