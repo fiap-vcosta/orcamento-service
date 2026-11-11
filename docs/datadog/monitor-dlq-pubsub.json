@@ -1,0 +1,21 @@
+{
+  "name": "[orcamento] pubsub dead-letter",
+  "type": "query alert",
+  "query": "sum(last_15m):sum:gcp.pubsub.subscription.dead_letter_message_count{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)}.as_count() > 0",
+  "message": "{{#is_alert}}Mensagens em dead-letter nas subscriptions de consumo do `orcamento-service` nos últimos 15 minutos. Conferir tópicos `orcamento-*-dlq`, logs `Failed to process Pub/Sub message` e APM.{{/is_alert}}\n{{#is_recovery}}Sem novas mensagens em dead-letter nas subscriptions deste serviço.{{/is_recovery}}",
+  "tags": [
+    "service:orcamento-service",
+    "env:prod"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 0
+    },
+    "notify_no_data": false,
+    "require_full_window": false,
+    "include_tags": true,
+    "new_host_delay": 300,
+    "notify_audit": false
+  },
+  "priority": 3
+}

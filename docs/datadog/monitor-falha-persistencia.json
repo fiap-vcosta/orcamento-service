@@ -1,0 +1,21 @@
+{
+  "name": "[orcamento] falha persistência",
+  "type": "log alert",
+  "query": "logs(\"service:orcamento-service env:prod \\\"Falha ao gravar orçamento\\\"\").index(\"*\").rollup(\"count\").last(\"10m\") > 0",
+  "message": "{{#is_alert}}Log `Falha ao gravar orçamento` em `orcamento-service` (`env:prod`) — falha de persistência / compensação no fluxo de orçamento.{{/is_alert}}\n{{#is_recovery}}Sem novas falhas de gravação de orçamento.{{/is_recovery}}",
+  "tags": [
+    "service:orcamento-service",
+    "env:prod"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 0
+    },
+    "enable_logs_sample": true,
+    "notify_no_data": false,
+    "notify_audit": false,
+    "include_tags": true,
+    "groupby_simple_monitor": false
+  },
+  "priority": 3
+}
