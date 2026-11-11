@@ -2,7 +2,6 @@ using Application.Abstractions.Services;
 using Application.Services;
 using Application.UseCases.Cobranca.Commands.GerarNovaCobranca;
 using BuildingBlocks.Events;
-using Domain.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using UnitTests.Fakes;
