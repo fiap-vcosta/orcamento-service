@@ -1,0 +1,505 @@
+{
+  "title": "[orcamento] dashboard",
+  "description": "Dashboard de `orcamento-service`: monitores, APIs (golden metrics), runtime, Pub/Sub/DLQ quando houver, Cloud SQL ou Firestore, e insights de negócio.",
+  "layout_type": "ordered",
+  "reflow_type": "auto",
+  "widgets": [
+    {
+      "definition": {
+        "title": "Monitores",
+        "background_color": "purple",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "type": "manage_status",
+              "query": "name:[orcamento]*",
+              "display_format": "counts",
+              "color_preference": "background",
+              "hide_zero_counts": false,
+              "show_last_triggered": true,
+              "show_priority": true,
+              "show_status": true,
+              "sort": "status,asc",
+              "count": 50,
+              "start": 0,
+              "summary_type": "monitors",
+              "title": "Monitores [orcamento]",
+              "title_size": "16",
+              "title_align": "left"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "APIs (golden metrics)",
+        "background_color": "vivid_blue",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Latência p95 (traffic latency)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "p95:trace.aspnet_core.request{service:orcamento-service,env:prod}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Tráfego — hits",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:trace.aspnet_core.request.hits{service:orcamento-service,env:prod}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Erros",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:trace.aspnet_core.request.errors{service:orcamento-service,env:prod}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Taxa de erro (errors / hits)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "(sum:trace.aspnet_core.request.errors{service:orcamento-service,env:prod}.as_count() / sum:trace.aspnet_core.request.hits{service:orcamento-service,env:prod}.as_count())",
+                  "display_type": "line"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Health hits",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:trace.aspnet_core.request.hits{service:orcamento-service,env:prod,resource_name:get_/orcamento/health}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Top resources — latência p95",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "apm_metrics",
+                      "name": "q1",
+                      "stat": "latency_p95",
+                      "service": "orcamento-service",
+                      "group_by": [
+                        "resource_name"
+                      ],
+                      "query_filter": "env:prod"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1",
+                      "limit": {
+                        "count": 10,
+                        "order": "desc"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Top resources — hits",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "apm_metrics",
+                      "name": "q1",
+                      "stat": "hits",
+                      "service": "orcamento-service",
+                      "group_by": [
+                        "resource_name"
+                      ],
+                      "query_filter": "env:prod"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1",
+                      "limit": {
+                        "count": 10,
+                        "order": "desc"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Top resources — erros",
+              "type": "toplist",
+              "requests": [
+                {
+                  "response_format": "scalar",
+                  "queries": [
+                    {
+                      "data_source": "apm_metrics",
+                      "name": "q1",
+                      "stat": "errors",
+                      "service": "orcamento-service",
+                      "group_by": [
+                        "resource_name"
+                      ],
+                      "query_filter": "env:prod"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1",
+                      "limit": {
+                        "count": 10,
+                        "order": "desc"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Aplicação",
+        "background_color": "blue",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Runtime .NET — CPU %",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:runtime.dotnet.cpu.percent{service:orcamento-service,env:prod}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Runtime .NET — memória committed",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:runtime.dotnet.mem.committed{service:orcamento-service,env:prod}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Eventos de entrada (consume)",
+        "background_color": "orange",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Undelivered por subscription",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.subscription.num_undelivered_messages{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)} by {subscription_id}",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Ack message count",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.subscription.ack_message_count{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)} by {subscription_id}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Oldest unacked age (s)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "max:gcp.pubsub.subscription.oldest_unacked_message_age{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)} by {subscription_id}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Nack requests",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.subscription.nack_requests{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)} by {subscription_id}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Dead-letter (DLQ)",
+        "background_color": "pink",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "dead_letter_message_count",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.subscription.dead_letter_message_count{project_id:vcosta-fiap-tech-challenge AND (subscription_id:orcamento-diagnostico-finalizado OR subscription_id:orcamento-ordem-servico-finalizada OR subscription_id:orcamento-ordem-servico-descartada)} by {subscription_id}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Envios aos tópicos *-dlq",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.topic.send_request_count{project_id:vcosta-fiap-tech-challenge AND (topic_id:orcamento-diagnostico-finalizado-dlq OR topic_id:orcamento-ordem-servico-finalizada-dlq OR topic_id:orcamento-ordem-servico-descartada-dlq)} by {topic_id}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Eventos de saída (publish)",
+        "background_color": "green",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Publish send_request_count",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.pubsub.topic.send_request_count{project_id:vcosta-fiap-tech-challenge AND (topic_id:orcamento-gerado OR topic_id:orcamento-falhou OR topic_id:cobranca-gerada OR topic_id:pagamento-confirmado OR topic_id:pagamento-recusado OR topic_id:notificacoes)} by {topic_id}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Mensagens retidas no tópico",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:gcp.pubsub.topic.num_retained_messages{project_id:vcosta-fiap-tech-challenge AND (topic_id:orcamento-gerado OR topic_id:orcamento-falhou OR topic_id:cobranca-gerada OR topic_id:pagamento-confirmado OR topic_id:pagamento-recusado OR topic_id:notificacoes)} by {topic_id}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Banco de dados (Firestore)",
+        "background_color": "gray",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "API request count",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.firestore.api.request_count{project_id:vcosta-fiap-tech-challenge,database_id:orcamento} by {api_method}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "API request latency avg",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "avg:gcp.firestore.api.request_latencies.avg{project_id:vcosta-fiap-tech-challenge,database_id:orcamento} by {api_method}",
+                  "display_type": "line"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Document reads",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.firestore.document.read_count{project_id:vcosta-fiap-tech-challenge,database_id:orcamento}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Document writes",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "q": "sum:gcp.firestore.document.write_count{project_id:vcosta-fiap-tech-challenge,database_id:orcamento}.as_count()",
+                  "display_type": "bars"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Insights de negócio",
+        "background_color": "yellow",
+        "show_title": true,
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Falha ao gravar orçamento",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "logs",
+                      "name": "query1",
+                      "indexes": [
+                        "*"
+                      ],
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "group_by": [],
+                      "search": {
+                        "query": "service:orcamento-service env:prod \"Falha ao gravar orçamento\""
+                      }
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Pub/Sub nack (worker)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "queries": [
+                    {
+                      "data_source": "logs",
+                      "name": "query1",
+                      "indexes": [
+                        "*"
+                      ],
+                      "compute": {
+                        "aggregation": "count"
+                      },
+                      "group_by": [],
+                      "search": {
+                        "query": "service:orcamento-service env:prod \"Failed to process Pub/Sub message\""
+                      }
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
