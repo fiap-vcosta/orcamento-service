@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using Api.Presenters.Cobranca;
 using Api.Services;
+using BuildingBlocks.Http.Auth;
 using BuildingBlocks.Http.ProblemDetails;
 using Domain.Exceptions;
 using Infrastructure.DependencyInjection;
@@ -13,6 +15,7 @@ public static class ServiceCollectionExtensions
         services.AddInfrastructure(configuration);
 
         services.AddSingleton<IWebhookDispatcher, WebhookDispatcher>();
+        services.AddScoped<CobrancaPresenter>();
 
         services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(
@@ -24,6 +27,7 @@ public static class ServiceCollectionExtensions
             options.Map<KeyNotFoundException>(StatusCodes.Status404NotFound, "Not Found");
             options.Map<BusinessRuleException>(StatusCodes.Status400BadRequest, "Business Rule Violation");
             options.Map<ArgumentException>(StatusCodes.Status400BadRequest, "Bad Request");
+            options.Map<UnauthorizedAccessException>(StatusCodes.Status401Unauthorized, "Unauthorized");
         });
 
         services.AddControllers(options =>
@@ -34,5 +38,7 @@ public static class ServiceCollectionExtensions
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
+
+        services.AddBuildingBlocksJwtAuthentication(configuration);
     }
 }

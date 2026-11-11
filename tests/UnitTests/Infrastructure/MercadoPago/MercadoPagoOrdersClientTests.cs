@@ -77,7 +77,7 @@ public class MercadoPagoOrdersClientTests
         Assert.Equal("150.00", root.GetProperty("total_amount").GetString());
         Assert.Equal("10", root.GetProperty("external_reference").GetString());
         var payment = root.GetProperty("transactions").GetProperty("payments")[0];
-        Assert.Equal("PT60S", payment.GetProperty("expiration_time").GetString());
+        Assert.Equal("P1D", payment.GetProperty("expiration_time").GetString());
         Assert.Equal("pix", payment.GetProperty("payment_method").GetProperty("id").GetString());
         var payer = root.GetProperty("payer");
         Assert.Equal("Ada Lovelace", payer.GetProperty("first_name").GetString());
@@ -266,22 +266,43 @@ public class MercadoPagoOrdersClientTests
     }
 
     [Theory]
-    [InlineData("processed", MercadoPagoOrderSituacao.Aprovada)]
-    [InlineData("PAID", MercadoPagoOrderSituacao.Aprovada)]
-    [InlineData("approved", MercadoPagoOrderSituacao.Aprovada)]
-    [InlineData("expired", MercadoPagoOrderSituacao.Expirada)]
-    [InlineData("failed", MercadoPagoOrderSituacao.Recusada)]
-    [InlineData("canceled", MercadoPagoOrderSituacao.Recusada)]
-    [InlineData("rejected", MercadoPagoOrderSituacao.Recusada)]
-    [InlineData("action_required", MercadoPagoOrderSituacao.Pendente)]
-    [InlineData("created", MercadoPagoOrderSituacao.Pendente)]
-    [InlineData(null, MercadoPagoOrderSituacao.Pendente)]
-    public void MapearSituacao_TraduzStatusDoMercadoPago(string? status, MercadoPagoOrderSituacao esperado)
+    [InlineData("processed", null, MercadoPagoOrderSituacao.Aprovada)]
+    [InlineData("PAID", null, MercadoPagoOrderSituacao.Aprovada)]
+    [InlineData("approved", null, MercadoPagoOrderSituacao.Aprovada)]
+    [InlineData("expired", null, MercadoPagoOrderSituacao.Expirada)]
+    [InlineData("canceled", "expired", MercadoPagoOrderSituacao.Expirada)]
+    [InlineData("cancelled", "expired", MercadoPagoOrderSituacao.Expirada)]
+    [InlineData("failed", null, MercadoPagoOrderSituacao.Recusada)]
+    [InlineData("canceled", null, MercadoPagoOrderSituacao.Recusada)]
+    [InlineData("rejected", null, MercadoPagoOrderSituacao.Recusada)]
+    [InlineData("action_required", null, MercadoPagoOrderSituacao.Pendente)]
+    [InlineData("created", null, MercadoPagoOrderSituacao.Pendente)]
+    [InlineData(null, null, MercadoPagoOrderSituacao.Pendente)]
+    public void MapearSituacao_TraduzStatusDoMercadoPago(
+        string? status,
+        string? statusDetail,
+        MercadoPagoOrderSituacao esperado)
     {
         // Arrange & Act
-        var situacao = MercadoPagoOrdersClient.MapearSituacao(status);
+        var situacao = MercadoPagoOrdersClient.MapearSituacao(status, statusDetail);
 
         // Assert
         Assert.Equal(esperado, situacao);
+    }
+
+    [Fact]
+    public async Task ObterOrder_CanceledComStatusDetailExpired_MapeiaExpirada()
+    {
+        // Arrange
+        var (client, _) = Criar(_ => Json(
+            HttpStatusCode.OK,
+            """{ "id": "ORD01", "status": "canceled", "status_detail": "expired" }"""));
+
+        // Act
+        var order = await client.ObterOrderAsync("ORD01");
+
+        // Assert
+        Assert.NotNull(order);
+        Assert.Equal(MercadoPagoOrderSituacao.Expirada, order.Situacao);
     }
 }

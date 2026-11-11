@@ -25,14 +25,34 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Firestore__DatabaseId", "orcamento");
         Environment.SetEnvironmentVariable("MercadoPago__AccessToken", "test-token");
         Environment.SetEnvironmentVariable("MercadoPago__WebhookSecret", WebhookSecret);
+        Environment.SetEnvironmentVariable("MercadoPago__ExpirationTime", "P1D");
         Environment.SetEnvironmentVariable("PubSub__ProjectId", "integration");
         Environment.SetEnvironmentVariable("PubSub__UseInMemory", "true");
         Environment.SetEnvironmentVariable("PubSub__EnableWorkers", "false");
+        Environment.SetEnvironmentVariable("Jwt__Funcionario__Issuer", TestJwt.Issuer);
+        Environment.SetEnvironmentVariable("Jwt__Funcionario__Audience", TestJwt.Audience);
+        Environment.SetEnvironmentVariable("Jwt__Funcionario__PublicKeyPem", TestJwt.PublicKeyPem);
+        Environment.SetEnvironmentVariable("Jwt__Funcionario__RequireHttpsMetadata", "false");
+        Environment.SetEnvironmentVariable("Jwt__Cliente__Issuer", TestJwt.Issuer);
+        Environment.SetEnvironmentVariable("Jwt__Cliente__Audience", TestJwt.Audience);
+        Environment.SetEnvironmentVariable("Jwt__Cliente__PublicKeyPem", TestJwt.PublicKeyPem);
+        Environment.SetEnvironmentVariable("Jwt__Cliente__RequireHttpsMetadata", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+
+        var publicPem = TestJwt.PublicKeyPem;
+        builder.UseSetting("Jwt:Funcionario:Issuer", TestJwt.Issuer);
+        builder.UseSetting("Jwt:Funcionario:Audience", TestJwt.Audience);
+        builder.UseSetting("Jwt:Funcionario:PublicKeyPem", publicPem);
+        builder.UseSetting("Jwt:Funcionario:RequireHttpsMetadata", "false");
+        builder.UseSetting("Jwt:Cliente:Issuer", TestJwt.Issuer);
+        builder.UseSetting("Jwt:Cliente:Audience", TestJwt.Audience);
+        builder.UseSetting("Jwt:Cliente:PublicKeyPem", publicPem);
+        builder.UseSetting("Jwt:Cliente:RequireHttpsMetadata", "false");
+
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -41,9 +61,18 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 ["Firestore:DatabaseId"] = "orcamento",
                 ["MercadoPago:AccessToken"] = "test-token",
                 ["MercadoPago:WebhookSecret"] = WebhookSecret,
+                ["MercadoPago:ExpirationTime"] = "P1D",
                 ["PubSub:ProjectId"] = "integration",
                 ["PubSub:UseInMemory"] = "true",
-                ["PubSub:EnableWorkers"] = "false"
+                ["PubSub:EnableWorkers"] = "false",
+                ["Jwt:Funcionario:Issuer"] = TestJwt.Issuer,
+                ["Jwt:Funcionario:Audience"] = TestJwt.Audience,
+                ["Jwt:Funcionario:PublicKeyPem"] = publicPem,
+                ["Jwt:Funcionario:RequireHttpsMetadata"] = "false",
+                ["Jwt:Cliente:Issuer"] = TestJwt.Issuer,
+                ["Jwt:Cliente:Audience"] = TestJwt.Audience,
+                ["Jwt:Cliente:PublicKeyPem"] = publicPem,
+                ["Jwt:Cliente:RequireHttpsMetadata"] = "false"
             });
         });
 

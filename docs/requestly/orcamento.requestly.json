@@ -17,7 +17,7 @@
         }
       },
       "rank": "a0",
-      "description": "Health e webhook Mercado Pago. Preencha webhookSecret / xSignature na UI (nunca no Git). Environments: Docker (:8084), Local (:8080), GCP Gateway."
+      "description": "Health, webhook Mercado Pago e nova cobrança staff. Preencha webhookSecret / xSignature / staffToken na UI (nunca no Git). Environments: Docker (:8084), Local (:8080), GCP Gateway."
     },
     {
       "id": "o1000001-0000-4000-8000-000000000010",
@@ -120,6 +120,53 @@
         }
       },
       "rank": "a0"
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000030",
+      "name": "03-staff-cobranca",
+      "type": "collection",
+      "parentId": "o1000001-0000-4000-8000-000000000001",
+      "deleted": false,
+      "data": {
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a2",
+      "description": "POST /orcamento/ordens/{ordemServicoId}/cobrancas (JWT staff) após Pix expirado."
+    },
+    {
+      "id": "o1000001-0000-4000-8000-000000000031",
+      "name": "gerar nova cobranca",
+      "type": "api",
+      "parentId": "o1000001-0000-4000-8000-000000000030",
+      "deleted": false,
+      "data": {
+        "type": "http",
+        "request": {
+          "url": "{{baseUrl}}/orcamento/ordens/{{ordemServicoId}}/cobrancas",
+          "method": "POST",
+          "headers": [
+            {
+              "id": 1,
+              "key": "Authorization",
+              "value": "Bearer {{staffToken}}",
+              "isEnabled": true,
+              "description": ""
+            }
+          ],
+          "queryParams": [],
+          "pathVariables": [],
+          "body": {
+            "contentType": "none"
+          },
+          "contentType": "none"
+        },
+        "auth": {
+          "type": "inherit"
+        }
+      },
+      "rank": "a0"
     }
   ],
   "environments": [
@@ -148,6 +195,14 @@
           "syncValue": "1742505638683"
         },
         "xSignature": {
+          "type": "secret",
+          "syncValue": ""
+        },
+        "ordemServicoId": {
+          "type": "string",
+          "syncValue": "1"
+        },
+        "staffToken": {
           "type": "secret",
           "syncValue": ""
         }
@@ -180,6 +235,14 @@
         "xSignature": {
           "type": "secret",
           "syncValue": ""
+        },
+        "ordemServicoId": {
+          "type": "string",
+          "syncValue": "1"
+        },
+        "staffToken": {
+          "type": "secret",
+          "syncValue": ""
         }
       }
     },
@@ -208,6 +271,14 @@
           "syncValue": ""
         },
         "xSignature": {
+          "type": "secret",
+          "syncValue": ""
+        },
+        "ordemServicoId": {
+          "type": "string",
+          "syncValue": "1"
+        },
+        "staffToken": {
           "type": "secret",
           "syncValue": ""
         }

@@ -4,6 +4,7 @@ using Application.Abstractions.Gateways;
 using Application.Abstractions.Services;
 using BuildingBlocks.Events;
 using Domain.Entities;
+using Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Services;
@@ -222,6 +223,11 @@ public class OrcamentoSagaService(
         await cobrancaGateway.SalvarAsync(cobranca, cancellationToken);
         await publisher.PublicarPagamentoRecusadoAsync(cobranca, motivo, cancellationToken);
 
+        if (order.Situacao == MercadoPagoOrderSituacao.Expirada)
+        {
+            return;
+        }
+
         var orcamento = await ObterOrcamentoVigenteAsync(cobranca.OrdemServicoId, cancellationToken);
         if (orcamento is null)
         {
@@ -230,6 +236,33 @@ public class OrcamentoSagaService(
 
         var existentes = await cobrancaGateway.ListarPorOrdemServicoAsync(cobranca.OrdemServicoId, cancellationToken);
         await CriarCobrancaAsync(orcamento, existentes.Count, cancellationToken);
+    }
+
+    public async Task<Cobranca> GerarNovaCobrancaAposExpiracaoAsync(
+        int ordemServicoId,
+        CancellationToken cancellationToken = default)
+    {
+        var orcamento = await ObterOrcamentoVigenteAsync(ordemServicoId, cancellationToken);
+        if (orcamento is null)
+        {
+            throw new DomainNotFoundException($"Orçamento vigente da ordem {ordemServicoId} não encontrado.");
+        }
+
+        var existentes = await cobrancaGateway.ListarPorOrdemServicoAsync(ordemServicoId, cancellationToken);
+        if (existentes.Any(c => c.Status == CobrancaStatus.Pendente))
+        {
+            throw new BusinessRuleException(
+                $"Ordem {ordemServicoId} já possui cobrança pendente; não é possível gerar outra.");
+        }
+
+        var ultima = existentes.OrderByDescending(c => c.CriadaEm).FirstOrDefault();
+        if (ultima is null || ultima.Status != CobrancaStatus.Expirada)
+        {
+            throw new BusinessRuleException(
+                $"Nova cobrança manual da ordem {ordemServicoId} só é permitida após expiração da cobrança anterior.");
+        }
+
+        return await CriarCobrancaAsync(orcamento, existentes.Count, cancellationToken);
     }
 
     public static string ChaveDiagnostico(int ordemServicoId, int versaoDiagnostico) =>
@@ -255,7 +288,7 @@ public class OrcamentoSagaService(
         return orcamento is { Status: OrcamentoStatus.Ativo } ? orcamento : null;
     }
 
-    private async Task CriarCobrancaAsync(
+    private async Task<Cobranca> CriarCobrancaAsync(
         Orcamento orcamento,
         int cobrancasAnteriores,
         CancellationToken cancellationToken)
@@ -276,6 +309,7 @@ public class OrcamentoSagaService(
 
         await cobrancaGateway.SalvarAsync(cobranca, cancellationToken);
         await publisher.PublicarCobrancaGeradaAsync(cobranca, cancellationToken);
+        return cobranca;
     }
 
     private async Task<bool> JaProcessadoAsync(

@@ -12,11 +12,13 @@ Requisitos: [docs/01_requisitos.md](docs/01_requisitos.md).
 |--------|------|--------|
 | `GET` | `/orcamento/health` | anônimo |
 | `POST` | `/orcamento/webhook/mercado-pago` | anônimo; valida `x-signature` |
+| `POST` | `/orcamento/ordens/{ordemServicoId}/cobrancas` | JWT staff; nova Pix após expiração |
 
 ## Local
 
 ```bash
 cp .env.example .env
+./scripts/setup-local-jwt.sh
 export NUGET_AUTH_TOKEN=…   # PAT read:packages
 
 # Só emuladores (dotnet run no host)

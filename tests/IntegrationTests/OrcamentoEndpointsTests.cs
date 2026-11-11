@@ -133,7 +133,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
     }
 
     [Fact]
-    public async Task Webhook_OrderExpirada_PublicaRecusadoECriaNovaCobranca()
+    public async Task Webhook_OrderExpirada_PublicaRecusadoENaoCriaNovaCobranca()
     {
         // Arrange
         var client = factory.CreateClient();
@@ -154,6 +154,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
 
         await SemearCobrancaAsync("ORD_EXPIRED", 504);
         factory.MercadoPago.Orders["ORD_EXPIRED"] = MercadoPagoOrderSituacao.Expirada;
+        var criacoesAntes = factory.MercadoPago.Criacoes.Count;
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
             "/orcamento/webhook/mercado-pago?data.id=ord_expired&type=order");
@@ -167,12 +168,58 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(await AguardarPublicacaoAsync(TopicIds.PagamentoRecusado));
-        Assert.True(await AguardarPublicacaoAsync(TopicIds.CobrancaGerada));
         Assert.Contains(
             Publicadas(TopicIds.PagamentoRecusado),
             m => m.Data.Contains("ORD_EXPIRED", StringComparison.Ordinal)
                 && m.Data.Contains("expirado", StringComparison.Ordinal));
         Assert.Contains("ORD_EXPIRED", factory.MercadoPago.Cancelamentos);
-        Assert.Contains(factory.MercadoPago.Criacoes, c => c.OrdemServicoId == 504 && c.Cliente.Nome == "Ada Lovelace");
+        Assert.Equal(criacoesAntes, factory.MercadoPago.Criacoes.Count);
+    }
+
+    [Fact]
+    public async Task Staff_GerarNovaCobrancaAposExpiracao_CriaPix()
+    {
+        // Arrange
+        var client = factory.CreateClient();
+        AuthHelper.AuthenticateAsStaff(client);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var orcamentos = scope.ServiceProvider.GetRequiredService<IOrcamentoGateway>();
+            var ordens = scope.ServiceProvider.GetRequiredService<IOrdemOrcamentoGateway>();
+            var cobrancas = scope.ServiceProvider.GetRequiredService<ICobrancaGateway>();
+            var orcamento = Orcamento.Criar(
+                505,
+                1,
+                new ClienteOrcamento { Nome = "Ada Lovelace", Email = "ada@oficina.dev", Documento = "86421537090" },
+                [new OrcamentoServico { Id = 1, Nome = "Óleo", ValorCobrado = 100m, Status = "Aprovado" }]);
+            await orcamentos.SalvarAsync(orcamento);
+            var ordem = OrdemOrcamento.Criar(505);
+            ordem.RegistrarOrcamento(orcamento.Id, 1);
+            await ordens.SalvarAsync(ordem);
+            var cobranca = Cobranca.CriarPendente("ORD_EXP_MANUAL", 505, orcamento.Id, "key-exp", 100m);
+            cobranca.Expirar();
+            await cobrancas.SalvarAsync(cobranca);
+        }
+
+        // Act
+        var response = await client.PostAsync("/orcamento/ordens/505/cobrancas", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.True(await AguardarPublicacaoAsync(TopicIds.CobrancaGerada));
+        Assert.Contains(factory.MercadoPago.Criacoes, c => c.OrdemServicoId == 505);
+    }
+
+    [Fact]
+    public async Task Staff_GerarNovaCobranca_SemJwt_RetornaUnauthorized()
+    {
+        // Arrange
+        var client = factory.CreateClient();
+
+        // Act
+        var response = await client.PostAsync("/orcamento/ordens/505/cobrancas", null);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

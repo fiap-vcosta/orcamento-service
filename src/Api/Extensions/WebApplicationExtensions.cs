@@ -9,6 +9,8 @@ public static class WebApplicationExtensions
         app.UseMiddleware<RequestIdMiddleware>();
         app.UseSwagger();
         app.UseSwaggerUI();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.MapControllers();
     }
 }
