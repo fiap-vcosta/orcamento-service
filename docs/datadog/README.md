@@ -25,3 +25,8 @@ Site: `us5.datadoghq.com`. Dashboard geral da Saga: repo `e2e` → `docs/datadog
 | Health (GCP) | https://vcosta-fiap.online/orcamento/health |
 
 Logs JSON com `DD_LOGS_INJECTION=true` levam `dd.trace_id` → **View Trace**.
+
+## Grupos do dashboard
+
+Cores por tipo: **Monitores** (purple), **Aplicação** (vivid_blue), **Eventos de entrada** (orange), **Eventos de saída** (green), **Dead-letter** (pink), **Banco** (gray), **Insights de negócio** (yellow).
+O grupo Monitores usa widget `manage_status` com query `name:[orcamento]*` (importe os monitores deste repo antes).
