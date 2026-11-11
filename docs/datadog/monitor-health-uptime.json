@@ -1,12 +1,11 @@
 {
-  "name": "demo \u2014 health orcamento-service",
+  "name": "[orcamento] health",
   "type": "query alert",
   "query": "sum(last_5m):sum:trace.aspnet_core.request.hits{service:orcamento-service,env:prod,resource_name:get_/orcamento/health}.as_count() < 1",
-  "message": "{{#is_alert}}Sem hits em `GET /orcamento/health` nos \u00faltimos 5 minutos \u2014 `orcamento-service` pode estar fora do ar.{{/is_alert}}\n{{#is_recovery}}Health voltou a receber hits.{{/is_recovery}}",
+  "message": "{{#is_alert}}Sem hits em `GET /orcamento/health` nos últimos 5 minutos — `orcamento-service` pode estar fora do ar.{{/is_alert}}\n{{#is_recovery}}Health voltou a receber hits.{{/is_recovery}}",
   "tags": [
     "service:orcamento-service",
-    "env:prod",
-    "demo:tech-challenge"
+    "env:prod"
   ],
   "options": {
     "thresholds": {
