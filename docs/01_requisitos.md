@@ -17,6 +17,7 @@ Credenciais do Mercado Pago ficam fora do repositório. O ambiente de teste é s
 
 * **RF02:** `OrdemServicoFinalizada` cria a cobrança com `POST /v1/orders` (Pix), header `X-Idempotency-Key` e `external_reference` igual ao `ordemServicoId`. O `cobrancaId` é o id da order no Mercado Pago.
 * **RF02.1:** Sucesso publica `CobrancaGerada` e a notificação `CobrancaPixDisponivel`, com o QR e o ticket. Uma nova tentativa usa outro `cobrancaId`.
+* **RF02.2:** `POST /orcamento/ordens/{ordemServicoId}/cobrancas` (JWT staff) gera nova cobrança Pix somente quando a última cobrança da ordem está `Expirada` e não há pendente. Publica `CobrancaGerada` / `CobrancaPixDisponivel`.
 * **RF03:** `OrdemServicoDescartada` cancela o orçamento se ele existir. Sem orçamento, a mensagem é reconhecida e não chama o Mercado Pago.
 
 ## 3. Webhook
@@ -25,6 +26,7 @@ Credenciais do Mercado Pago ficam fora do repositório. O ambiente de teste é s
 * **RF04.1:** Assinatura inválida não publica evento de pagamento.
 * **RF04.2:** Order aprovada publica `PagamentoConfirmado`.
 * **RF04.3:** Order recusada ou expirada é cancelada (`/v1/orders/{id}/cancel`) e o serviço publica `PagamentoRecusado`. `motivo` é `recusado` ou `expirado`.
+* **RF04.4:** Em `recusado`, o serviço gera automaticamente outra cobrança Pix (nova tentativa). Em `expirado`, não regenera — a nova cobrança é manual (RF02.2).
 
 ## 4. Notificações e idempotência
 

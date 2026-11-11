@@ -15,7 +15,7 @@ Serviço de orçamento e cobrança Pix (Mercado Pago Orders). Org [fiap-vcosta](
 | `src/Domain` | Orçamento, cobrança, ordem descartada |
 | `src/Application` | Saga MediatR + consumers Pub/Sub |
 | `src/Infrastructure` | Firestore, Mercado Pago Orders, publisher |
-| `src/Api` | Webhook `/orcamento/webhook/mercado-pago`, health |
+| `src/Api` | Webhook `/orcamento/webhook/mercado-pago`, staff `POST /orcamento/ordens/{id}/cobrancas`, health |
 | `tests/UnitTests` | Gate Coverlet 80% |
 | `tests/IntegrationTests` | HTTP + fakes |
 | `terraform/` | Firestore nomeado + subscriptions/DLQ |

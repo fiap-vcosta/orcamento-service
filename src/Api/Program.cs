@@ -11,6 +11,11 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    if (builder.Environment.IsDevelopment())
+    {
+        TryLoadLocalJwtPublicKey(builder);
+    }
+
     builder.Host.UseSerilog(DatadogLogging.Configure);
     builder.Services.AddApiServices(builder.Configuration);
     builder.Services.AddEndpointsApiExplorer();
@@ -25,6 +30,23 @@ try
     app.MapGet("/orcamento/health", () => Results.Ok("OK")).AllowAnonymous();
 
     await app.RunAsync();
+
+    static void TryLoadLocalJwtPublicKey(WebApplicationBuilder webApplicationBuilder)
+    {
+        var publicKeyPath = Path.GetFullPath(
+            Path.Combine(webApplicationBuilder.Environment.ContentRootPath, "..", "..", ".local", "jwt", "public.pem"));
+        if (!File.Exists(publicKeyPath))
+        {
+            return;
+        }
+
+        var publicPem = File.ReadAllText(publicKeyPath);
+        webApplicationBuilder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:Funcionario:PublicKeyPem"] = publicPem,
+            ["Jwt:Cliente:PublicKeyPem"] = publicPem
+        });
+    }
 }
 catch (Exception ex)
 {

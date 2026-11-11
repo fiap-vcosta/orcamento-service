@@ -92,14 +92,24 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
         await ReadOrThrowAsync(response, cancellationToken);
     }
 
-    public static MercadoPagoOrderSituacao MapearSituacao(string? status) =>
-        status?.ToLowerInvariant() switch
+    public static MercadoPagoOrderSituacao MapearSituacao(string? status, string? statusDetail = null)
+    {
+        var normalized = status?.ToLowerInvariant();
+        var detail = statusDetail?.ToLowerInvariant();
+
+        if (normalized is "expired"
+            || (normalized is "canceled" or "cancelled" && detail is "expired"))
+        {
+            return MercadoPagoOrderSituacao.Expirada;
+        }
+
+        return normalized switch
         {
             "processed" or "paid" or "approved" => MercadoPagoOrderSituacao.Aprovada,
-            "expired" => MercadoPagoOrderSituacao.Expirada,
             "failed" or "canceled" or "cancelled" or "rejected" or "refunded" => MercadoPagoOrderSituacao.Recusada,
             _ => MercadoPagoOrderSituacao.Pendente
         };
+    }
 
     private static async Task<string> ReadOrThrowAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
@@ -123,6 +133,9 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
         var id = root.GetProperty("id").GetString()
             ?? throw new InvalidOperationException("Order do Mercado Pago sem id na resposta.");
         var status = root.TryGetProperty("status", out var statusElement) ? statusElement.GetString() : null;
+        var statusDetail = root.TryGetProperty("status_detail", out var statusDetailElement)
+            ? statusDetailElement.GetString()
+            : null;
 
         string? qrCode = null;
         string? ticket = null;
@@ -136,7 +149,7 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
             ticket = ReadString(paymentMethod, "ticket_url");
         }
 
-        return new MercadoPagoOrder(id, MapearSituacao(status), qrCode, ticket);
+        return new MercadoPagoOrder(id, MapearSituacao(status, statusDetail), qrCode, ticket);
     }
 
     private static string? ReadString(JsonElement element, string name) =>

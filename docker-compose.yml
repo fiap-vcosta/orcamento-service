@@ -56,10 +56,18 @@ services:
       PubSub__ProjectId: ${PUBSUB_PROJECT_ID:-local-orcamento}
       PubSub__UseInMemory: "false"
       PubSub__EnableWorkers: "true"
+      Jwt__Funcionario__Issuer: ${JWT_ISSUER:?JWT_ISSUER is required}
+      Jwt__Funcionario__Audience: ${JWT_AUDIENCE:?JWT_AUDIENCE is required}
+      Jwt__Funcionario__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM:?JWT_PUBLIC_KEY_PEM is required}
+      Jwt__Funcionario__RequireHttpsMetadata: "false"
+      Jwt__Cliente__Issuer: ${JWT_ISSUER:?JWT_ISSUER is required}
+      Jwt__Cliente__Audience: ${JWT_AUDIENCE:?JWT_AUDIENCE is required}
+      Jwt__Cliente__PublicKeyPem: ${JWT_PUBLIC_KEY_PEM:?JWT_PUBLIC_KEY_PEM is required}
+      Jwt__Cliente__RequireHttpsMetadata: "false"
       MercadoPago__AccessToken: ${MercadoPago__AccessToken:-}
       MercadoPago__WebhookSecret: ${MercadoPago__WebhookSecret:-}
       MercadoPago__BaseUrl: ${MercadoPago__BaseUrl:-https://api.mercadopago.com}
-      MercadoPago__ExpirationTime: ${MercadoPago__ExpirationTime:-PT60S}
+      MercadoPago__ExpirationTime: ${MercadoPago__ExpirationTime:-P1D}
       DD_SERVICE: orcamento-service
       DD_ENV: local
       DD_LOGS_INJECTION: "true"

@@ -2,6 +2,7 @@ using Application.Abstractions.Services;
 using Application.Services;
 using BuildingBlocks.Events;
 using Domain.Entities;
+using Domain.Exceptions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using UnitTests.Fakes;
@@ -577,18 +578,13 @@ public class OrcamentoSagaServiceTests
     }
 
     [Fact]
-    public async Task Webhook_Expirada_CancelaPublicaRecusadoEGeraNovaCobranca()
+    public async Task Webhook_Expirada_CancelaPublicaRecusadoENaoGeraNovaCobranca()
     {
         // Arrange
         var cobranca = await PrepararCobrancaPendenteAsync();
         _mercadoPago
             .Setup(m => m.ObterOrderAsync(cobranca.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MercadoPagoOrder(cobranca.Id, MercadoPagoOrderSituacao.Expirada, null, null));
-        var requests = new List<CriarOrderPixRequest>();
-        _mercadoPago
-            .Setup(m => m.CriarOrderPixAsync(It.IsAny<CriarOrderPixRequest>(), It.IsAny<CancellationToken>()))
-            .Callback<CriarOrderPixRequest, CancellationToken>((r, _) => requests.Add(r))
-            .ReturnsAsync(new MercadoPagoOrder("ord_mp_retry", MercadoPagoOrderSituacao.Pendente, "qr2", "ticket2"));
 
         // Act
         await _service.ProcessarWebhookOrderAsync(cobranca.Id);
@@ -602,13 +598,41 @@ public class OrcamentoSagaServiceTests
                 PagamentoRecusadoMotivos.Expirado,
                 It.IsAny<CancellationToken>()),
             Times.Once);
-        var retry = Assert.Single(requests);
-        Assert.Equal("Ada", retry.Cliente.Nome);
-        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(10, 2), retry.IdempotencyKey);
-        Assert.NotEqual(cobranca.IdempotencyKey, retry.IdempotencyKey);
-        var nova = _cobrancas.Items["ord_mp_retry"];
+        Assert.Single(_cobrancas.Items);
+        _mercadoPago.Verify(
+            m => m.CriarOrderPixAsync(It.IsAny<CriarOrderPixRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GerarNovaCobrancaAposExpiracao_ComUltimaExpirada_CriaNova()
+    {
+        // Arrange
+        var cobranca = await PrepararCobrancaPendenteAsync();
+        cobranca.Expirar();
+        await _cobrancas.SalvarAsync(cobranca);
+
+        // Act
+        var nova = await _service.GerarNovaCobrancaAposExpiracaoAsync(10);
+
+        // Assert
         Assert.Equal(CobrancaStatus.Pendente, nova.Status);
+        Assert.Equal(2, _cobrancas.Items.Count);
+        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(10, 2), nova.IdempotencyKey);
         _publisher.Verify(p => p.PublicarCobrancaGeradaAsync(nova, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GerarNovaCobrancaAposExpiracao_ComPendente_Lanca()
+    {
+        // Arrange
+        await PrepararCobrancaPendenteAsync();
+
+        // Act
+        var act = () => _service.GerarNovaCobrancaAposExpiracaoAsync(10);
+
+        // Assert
+        await Assert.ThrowsAsync<BusinessRuleException>(act);
     }
 
     [Fact]
