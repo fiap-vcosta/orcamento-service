@@ -59,12 +59,18 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
         var json = await ReadOrThrowAsync(response, cancellationToken);
 
         var order = Parse(json);
-        if (string.IsNullOrWhiteSpace(order.QrCode))
+        if (!string.IsNullOrWhiteSpace(order.QrCode))
         {
-            throw new InvalidOperationException("Order Pix do Mercado Pago sem qr_code na resposta.");
+            return order;
         }
 
-        return order;
+        var refreshed = await ObterOrderAsync(order.Id, cancellationToken);
+        if (refreshed is not null && !string.IsNullOrWhiteSpace(refreshed.QrCode))
+        {
+            return refreshed;
+        }
+
+        throw new InvalidOperationException("Order Pix do Mercado Pago sem qr_code na resposta.");
     }
 
     public async Task<MercadoPagoOrder?> ObterOrderAsync(string orderId, CancellationToken cancellationToken = default)

@@ -107,16 +107,48 @@ public class MercadoPagoOrdersClientTests
     }
 
     [Fact]
-    public async Task CriarOrderPix_SemQrCode_Lanca()
+    public async Task CriarOrderPix_SemQrCodeNoCreate_BuscaOrderEMapeiaQr()
     {
         // Arrange
-        var (client, _) = Criar(_ => Json(HttpStatusCode.Created, """{ "id": "ORD01", "status": "created" }"""));
+        var (client, handler) = Criar(request =>
+        {
+            if (request.Method == HttpMethod.Post)
+            {
+                return Json(HttpStatusCode.Created, """{ "id": "ORD01", "status": "created" }""");
+            }
+
+            return Json(HttpStatusCode.OK, OrderCriada);
+        });
+
+        // Act
+        var order = await client.CriarOrderPixAsync(Request());
+
+        // Assert
+        Assert.Equal(2, handler.Calls.Count);
+        Assert.Equal(HttpMethod.Post, handler.Calls[0].Method);
+        Assert.Equal(HttpMethod.Get, handler.Calls[1].Method);
+        Assert.Equal("/v1/orders/ORD01", handler.Calls[1].Path);
+        Assert.Equal("ORD01", order.Id);
+        Assert.Equal("000201qr", order.QrCode);
+        Assert.Equal("https://ticket", order.Ticket);
+    }
+
+    [Fact]
+    public async Task CriarOrderPix_SemQrCodeNoCreateNemNoGet_Lanca()
+    {
+        // Arrange
+        var (client, handler) = Criar(request =>
+            request.Method == HttpMethod.Post
+                ? Json(HttpStatusCode.Created, """{ "id": "ORD01", "status": "created" }""")
+                : Json(HttpStatusCode.OK, """{ "id": "ORD01", "status": "created" }"""));
 
         // Act
         var act = () => client.CriarOrderPixAsync(Request());
 
         // Assert
         await Assert.ThrowsAsync<InvalidOperationException>(act);
+        Assert.Equal(2, handler.Calls.Count);
+        Assert.Equal(HttpMethod.Get, handler.Calls[1].Method);
     }
 
     [Fact]

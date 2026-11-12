@@ -15,9 +15,9 @@ Credenciais do Mercado Pago ficam fora do repositório. O ambiente de teste é s
 
 ## 2. Cobrança Pix
 
-* **RF02:** `OrdemServicoFinalizada` cria a cobrança com `POST /v1/orders` (Pix), header `X-Idempotency-Key` e `external_reference` igual ao `ordemServicoId`. O `cobrancaId` é o id da order no Mercado Pago.
+* **RF02:** `OrdemServicoFinalizada` cria a cobrança com `POST /v1/orders` (Pix), header `X-Idempotency-Key` e `external_reference` igual ao `ordemServicoId`. O `cobrancaId` é o id da order no Mercado Pago. Se o create não trouxer `qr_code`, o serviço faz um `GET /v1/orders/{id}` antes de falhar.
 * **RF02.1:** Sucesso publica `CobrancaGerada` e a notificação `CobrancaPixDisponivel`, com o QR e o ticket. Uma nova tentativa usa outro `cobrancaId`.
-* **RF02.2:** `POST /orcamento/ordens/{ordemServicoId}/cobrancas` (JWT staff) gera nova cobrança Pix somente quando a última cobrança da ordem está `Expirada` e não há pendente. Publica `CobrancaGerada` / `CobrancaPixDisponivel`.
+* **RF02.2:** `POST /orcamento/ordens/{ordemServicoId}/cobrancas` (JWT staff) gera nova cobrança Pix somente quando a última cobrança da ordem está `Expirada` e não há pendente. Publica `CobrancaGerada` / `CobrancaPixDisponivel`. Na OS, esse momento corresponde ao status `CobrancaExpirada` voltando a `AguardandoPagamento` após o evento.
 * **RF03:** `OrdemServicoDescartada` cancela o orçamento se ele existir. Sem orçamento, a mensagem é reconhecida e não chama o Mercado Pago.
 
 ## 3. Webhook
