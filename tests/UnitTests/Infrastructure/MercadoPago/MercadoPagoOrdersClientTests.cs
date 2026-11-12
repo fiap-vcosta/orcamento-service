@@ -278,10 +278,10 @@ public class MercadoPagoOrdersClientTests
         var (client, _) = Criar(_ => Json(HttpStatusCode.Conflict, "{}"));
 
         // Act
-        var act = () => client.CancelarOrderAsync("ORD01");
+        var exception = await Record.ExceptionAsync(() => client.CancelarOrderAsync("ORD01"));
 
         // Assert
-        await act();
+        Assert.Null(exception);
     }
 
     [Fact]
