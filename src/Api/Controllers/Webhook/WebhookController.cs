@@ -10,29 +10,22 @@ namespace Api.Controllers.Webhook;
 public class WebhookController(IWebhookDispatcher dispatcher) : ControllerBase
 {
     [HttpPost("mercado-pago")]
-    public async Task<IActionResult> MercadoPago(CancellationToken cancellationToken)
+    public async Task<IActionResult> MercadoPago(
+        [FromHeader(Name = "x-signature")] string? xSignature,
+        [FromHeader(Name = "x-request-id")] string? xRequestId,
+        [FromQuery(Name = "data.id")] string? dataIdFromQuery,
+        CancellationToken cancellationToken)
     {
-        var dataId = await ResolverDataIdAsync(cancellationToken);
+        var dataId = await ReadDataIdFromBodyAsync(cancellationToken) ?? dataIdFromQuery;
         if (!string.IsNullOrWhiteSpace(dataId))
         {
             _ = dispatcher.Dispatch(new ProcessarWebhookMercadoPagoCommand(
                 dataId,
-                Request.Headers["x-signature"].FirstOrDefault(),
-                Request.Headers["x-request-id"].FirstOrDefault()));
+                xSignature,
+                xRequestId));
         }
 
         return Ok();
-    }
-
-    private async Task<string?> ResolverDataIdAsync(CancellationToken cancellationToken)
-    {
-        var fromBody = await ReadDataIdFromBodyAsync(cancellationToken);
-        if (!string.IsNullOrWhiteSpace(fromBody))
-        {
-            return fromBody;
-        }
-
-        return Request.Query["data.id"].FirstOrDefault();
     }
 
     private async Task<string?> ReadDataIdFromBodyAsync(CancellationToken cancellationToken)

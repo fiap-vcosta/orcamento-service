@@ -19,23 +19,13 @@ public class WebhookControllerTests
             .Returns(Task.CompletedTask);
     }
 
-    private WebhookController CriarController(string? body, string? query, string? signature = "ts=1,v1=abc", string? requestId = "req-1")
+    private WebhookController CriarController(string? body, string? query)
     {
         var context = new DefaultHttpContext();
         context.Request.Body = new MemoryStream(Encoding.UTF8.GetBytes(body ?? string.Empty));
         if (query is not null)
         {
             context.Request.QueryString = new QueryString(query);
-        }
-
-        if (signature is not null)
-        {
-            context.Request.Headers["x-signature"] = signature;
-        }
-
-        if (requestId is not null)
-        {
-            context.Request.Headers["x-request-id"] = requestId;
         }
 
         return new WebhookController(_dispatcher.Object)
@@ -51,7 +41,7 @@ public class WebhookControllerTests
         var controller = CriarController(null, "?data.id=ord01&type=order");
 
         // Act
-        var result = await controller.MercadoPago(CancellationToken.None);
+        var result = await controller.MercadoPago("ts=1,v1=abc", "req-1", "ord01", CancellationToken.None);
 
         // Assert
         Assert.IsType<OkResult>(result);
@@ -67,7 +57,7 @@ public class WebhookControllerTests
         var controller = CriarController("""{ "action": "order.processed", "data": { "id": "ORD01" } }""", "?data.id=ord01");
 
         // Act
-        var result = await controller.MercadoPago(CancellationToken.None);
+        var result = await controller.MercadoPago("ts=1,v1=abc", "req-1", "ord01", CancellationToken.None);
 
         // Assert
         Assert.IsType<OkResult>(result);
@@ -83,7 +73,7 @@ public class WebhookControllerTests
         var controller = CriarController("""{ "data": { "id": 123 } }""", null);
 
         // Act
-        await controller.MercadoPago(CancellationToken.None);
+        await controller.MercadoPago("ts=1,v1=abc", "req-1", null, CancellationToken.None);
 
         // Assert
         _dispatcher.Verify(
@@ -103,7 +93,7 @@ public class WebhookControllerTests
         var controller = CriarController(body, null);
 
         // Act
-        var result = await controller.MercadoPago(CancellationToken.None);
+        var result = await controller.MercadoPago(null, null, null, CancellationToken.None);
 
         // Assert
         Assert.IsType<OkResult>(result);
@@ -114,10 +104,10 @@ public class WebhookControllerTests
     public async Task MercadoPago_CorpoInvalidoComDataIdNaQuery_UsaQuery()
     {
         // Arrange
-        var controller = CriarController("lixo", "?data.id=ord9", signature: null, requestId: null);
+        var controller = CriarController("lixo", "?data.id=ord9");
 
         // Act
-        await controller.MercadoPago(CancellationToken.None);
+        await controller.MercadoPago(null, null, "ord9", CancellationToken.None);
 
         // Assert
         _dispatcher.Verify(

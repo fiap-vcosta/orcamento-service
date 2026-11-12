@@ -1,5 +1,11 @@
 # orcamento-service
 
+[![Quality Gate](https://sonarcloud.io/api/project_badges/quality_gate?project=fiap-vcosta_orcamento-service)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+[![Reliability](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+[![Security](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+[![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+[![Duplications](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+
 Serviço de orçamento e cobrança Pix da oficina (Mercado Pago Orders). Gera o orçamento a partir do diagnóstico finalizado, publica o resultado da cobrança e recebe o webhook de pagamento.
 
 Stack: .NET 8, Firestore (database nomeado) e Pub/Sub. Org [fiap-vcosta](https://github.com/fiap-vcosta).
