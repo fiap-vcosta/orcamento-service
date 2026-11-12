@@ -200,7 +200,7 @@
         },
         "ordemServicoId": {
           "type": "string",
-          "syncValue": "1"
+          "syncValue": "00000000-0000-0000-0000-000000000001"
         },
         "staffToken": {
           "type": "secret",
@@ -238,7 +238,7 @@
         },
         "ordemServicoId": {
           "type": "string",
-          "syncValue": "1"
+          "syncValue": "00000000-0000-0000-0000-000000000001"
         },
         "staffToken": {
           "type": "secret",
@@ -276,7 +276,7 @@
         },
         "ordemServicoId": {
           "type": "string",
-          "syncValue": "1"
+          "syncValue": "00000000-0000-0000-0000-000000000001"
         },
         "staffToken": {
           "type": "secret",

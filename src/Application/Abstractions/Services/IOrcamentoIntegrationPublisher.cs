@@ -7,7 +7,7 @@ public interface IOrcamentoIntegrationPublisher
     Task PublicarOrcamentoGeradoAsync(Orcamento orcamento, CancellationToken cancellationToken = default);
 
     Task PublicarOrcamentoFalhouAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         int versaoDiagnostico,
         string motivo,
         CancellationToken cancellationToken = default);

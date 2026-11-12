@@ -18,7 +18,7 @@ Requisitos: [docs/01_requisitos.md](docs/01_requisitos.md).
 |--------|------|--------|
 | `GET` | `/orcamento/health` | anônimo |
 | `POST` | `/orcamento/webhook/mercado-pago` | anônimo; valida `x-signature` |
-| `POST` | `/orcamento/ordens/{ordemServicoId}/cobrancas` | JWT staff; nova Pix após expiração (OS em `CobrancaExpirada`) |
+| `POST` | `/orcamento/ordens/{ordemServicoId:guid}/cobrancas` | JWT staff; nova Pix após expiração (OS em `CobrancaExpirada`) |
 
 ## Local
 

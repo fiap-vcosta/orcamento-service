@@ -22,6 +22,9 @@ public static class DocumentFields
             ? Convert.ToInt32(value, CultureInfo.InvariantCulture)
             : null;
 
+    public static Guid GetGuid(IReadOnlyDictionary<string, object?> fields, string name) =>
+        Guid.Parse(GetString(fields, name));
+
     public static bool GetBool(IReadOnlyDictionary<string, object?> fields, string name) =>
         fields.TryGetValue(name, out var value) && value is true;
 

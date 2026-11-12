@@ -12,13 +12,13 @@ public sealed class FirestoreCobrancaGateway(IDocumentRecordStore recordStore) :
     }
 
     public async Task<IReadOnlyList<Cobranca>> ListarPorOrdemServicoAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default)
     {
         var documentos = await recordStore.QueryEqualAsync(
             FirestoreCollections.Cobrancas,
             "ordemServicoId",
-            ordemServicoId,
+            ordemServicoId.ToString(),
             cancellationToken);
         return documentos.Select(ToEntity).ToList();
     }
@@ -30,7 +30,7 @@ public sealed class FirestoreCobrancaGateway(IDocumentRecordStore recordStore) :
             new Dictionary<string, object?>
             {
                 ["id"] = cobranca.Id,
-                ["ordemServicoId"] = cobranca.OrdemServicoId,
+                ["ordemServicoId"] = cobranca.OrdemServicoId.ToString(),
                 ["orcamentoId"] = cobranca.OrcamentoId,
                 ["idempotencyKey"] = cobranca.IdempotencyKey,
                 ["valorTotal"] = DocumentFields.FormatDecimal(cobranca.ValorTotal),
@@ -46,7 +46,7 @@ public sealed class FirestoreCobrancaGateway(IDocumentRecordStore recordStore) :
         var cobranca = new Cobranca
         {
             Id = DocumentFields.GetString(fields, "id"),
-            OrdemServicoId = DocumentFields.GetInt(fields, "ordemServicoId"),
+            OrdemServicoId = DocumentFields.GetGuid(fields, "ordemServicoId"),
             OrcamentoId = DocumentFields.GetString(fields, "orcamentoId"),
             IdempotencyKey = DocumentFields.GetString(fields, "idempotencyKey"),
             ValorTotal = DocumentFields.GetDecimal(fields, "valorTotal"),

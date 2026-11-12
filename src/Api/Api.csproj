@@ -6,7 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="building-blocks" Version="1.2.0" />
+    <PackageReference Include="building-blocks" Version="1.3.0" />
     <PackageReference Include="Datadog.Trace.Bundle" Version="3.53.0" />
     <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />

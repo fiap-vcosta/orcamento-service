@@ -10,6 +10,8 @@ namespace UnitTests.Application.UseCases.Cobranca.Commands.GerarNovaCobranca;
 
 public class GerarNovaCobrancaCommandHandlerTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("f3a4b5c6-7d8e-4f90-b1a2-c3d4e5f60718");
+
     private readonly InMemoryOrcamentoGateway _orcamentos = new();
     private readonly InMemoryOrdemOrcamentoGateway _ordens = new();
     private readonly InMemoryCobrancaGateway _cobrancas = new();
@@ -46,7 +48,7 @@ public class GerarNovaCobrancaCommandHandlerTests
         // Arrange
         var diagnostico = new DiagnosticoFinalizadoData
         {
-            OrdemServicoId = 20,
+            OrdemServicoId = OrdemServicoId,
             VersaoDiagnostico = 1,
             Cliente = new DiagnosticoFinalizadoCliente
             {
@@ -76,18 +78,18 @@ public class GerarNovaCobrancaCommandHandlerTests
         await saga.ProcessarDiagnosticoFinalizadoAsync(Guid.NewGuid(), diagnostico);
         await saga.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 20 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
         var existente = _cobrancas.Items.Values.Single();
         existente.Expirar();
         await _cobrancas.SalvarAsync(existente);
 
         // Act
         var response = await _handler.Handle(
-            new GerarNovaCobrancaCommand { OrdemServicoId = 20 },
+            new GerarNovaCobrancaCommand { OrdemServicoId = OrdemServicoId },
             CancellationToken.None);
 
         // Assert
-        Assert.Equal(20, response.OrdemServicoId);
+        Assert.Equal(OrdemServicoId, response.OrdemServicoId);
         Assert.Equal("Pendente", response.Status);
         Assert.Equal("000201qr", response.QrCode);
         Assert.Equal("https://ticket", response.TicketUrl);

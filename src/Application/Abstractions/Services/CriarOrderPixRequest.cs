@@ -4,6 +4,6 @@ namespace Application.Abstractions.Services;
 
 public sealed record CriarOrderPixRequest(
     string IdempotencyKey,
-    int OrdemServicoId,
+    Guid OrdemServicoId,
     decimal ValorTotal,
     ClienteOrcamento Cliente);

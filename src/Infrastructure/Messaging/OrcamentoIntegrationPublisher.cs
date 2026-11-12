@@ -37,7 +37,7 @@ public sealed class OrcamentoIntegrationPublisher(IEventPublisher eventPublisher
     }
 
     public Task PublicarOrcamentoFalhouAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         int versaoDiagnostico,
         string motivo,
         CancellationToken cancellationToken = default) =>

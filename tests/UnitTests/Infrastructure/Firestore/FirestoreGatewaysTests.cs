@@ -6,6 +6,11 @@ namespace UnitTests.Infrastructure.Firestore;
 
 public class FirestoreGatewaysTests
 {
+    private static readonly Guid OrdemA = Guid.Parse("a1b2c3d4-0001-4000-8000-000000000001");
+    private static readonly Guid OrdemB = Guid.Parse("a1b2c3d4-0002-4000-8000-000000000002");
+    private static readonly Guid OrdemC = Guid.Parse("a1b2c3d4-0003-4000-8000-000000000003");
+    private static readonly Guid OrdemInexistente = Guid.Parse("a1b2c3d4-0099-4000-8000-000000000099");
+
     private readonly InMemoryDocumentRecordStore _store = new();
 
     [Fact]
@@ -14,7 +19,7 @@ public class FirestoreGatewaysTests
         // Arrange
         var gateway = new FirestoreOrcamentoGateway(_store);
         var orcamento = Orcamento.Criar(
-            10,
+            OrdemA,
             2,
             new ClienteOrcamento { Nome = "Ada", Email = "ada@oficina.dev", Documento = "86421537090" },
             [
@@ -24,12 +29,12 @@ public class FirestoreGatewaysTests
 
         // Act
         await gateway.SalvarAsync(orcamento);
-        var lido = await gateway.GetByIdAsync("orc-10-2");
+        var lido = await gateway.GetByIdAsync($"orc-{OrdemA}-2");
 
         // Assert
         Assert.NotNull(lido);
         Assert.Equal(orcamento.Id, lido.Id);
-        Assert.Equal(10, lido.OrdemServicoId);
+        Assert.Equal(OrdemA, lido.OrdemServicoId);
         Assert.Equal(2, lido.VersaoDiagnostico);
         Assert.Equal("Ada", lido.Cliente.Nome);
         Assert.Equal("ada@oficina.dev", lido.Cliente.Email);
@@ -48,7 +53,7 @@ public class FirestoreGatewaysTests
         // Arrange
         var gateway = new FirestoreOrcamentoGateway(_store);
         var orcamento = Orcamento.Criar(
-            1,
+            OrdemB,
             1,
             new ClienteOrcamento { Nome = "Ada", Email = "a@b.c", Documento = "1" },
             []);
@@ -70,7 +75,7 @@ public class FirestoreGatewaysTests
         var gateway = new FirestoreOrcamentoGateway(_store);
 
         // Act
-        var lido = await gateway.GetByIdAsync("orc-0-0");
+        var lido = await gateway.GetByIdAsync(Orcamento.CriarId(OrdemInexistente, 0));
 
         // Assert
         Assert.Null(lido);
@@ -80,14 +85,15 @@ public class FirestoreGatewaysTests
     public async Task Orcamento_ConverteInteirosVindosComoLong()
     {
         // Arrange
+        var orcamentoId = Orcamento.CriarId(OrdemC, 1);
         var gateway = new FirestoreOrcamentoGateway(_store);
         await _store.SetAsync(
             FirestoreCollections.Orcamentos,
-            "orc-5-1",
+            orcamentoId,
             new Dictionary<string, object?>
             {
-                ["id"] = "orc-5-1",
-                ["ordemServicoId"] = 5L,
+                ["id"] = orcamentoId,
+                ["ordemServicoId"] = OrdemC.ToString(),
                 ["versaoDiagnostico"] = 1L,
                 ["cliente"] = new Dictionary<string, object> { ["nome"] = "A", ["email"] = "e", ["documento"] = "d" },
                 ["servicos"] = new List<object>
@@ -106,10 +112,10 @@ public class FirestoreGatewaysTests
             });
 
         // Act
-        var lido = await gateway.GetByIdAsync("orc-5-1");
+        var lido = await gateway.GetByIdAsync(orcamentoId);
 
         // Assert
-        Assert.Equal(5, lido!.OrdemServicoId);
+        Assert.Equal(OrdemC, lido!.OrdemServicoId);
         Assert.Equal(9, lido.Servicos.Single().Id);
     }
 
@@ -118,18 +124,18 @@ public class FirestoreGatewaysTests
     {
         // Arrange
         var gateway = new FirestoreOrdemOrcamentoGateway(_store);
-        var ordem = OrdemOrcamento.Criar(10);
-        ordem.RegistrarOrcamento("orc-10-3", 3);
+        var ordem = OrdemOrcamento.Criar(OrdemA);
+        ordem.RegistrarOrcamento($"orc-{OrdemA}-3", 3);
         ordem.MarcarDescartada();
 
         // Act
         await gateway.SalvarAsync(ordem);
-        var lida = await gateway.GetByOrdemServicoIdAsync(10);
+        var lida = await gateway.GetByOrdemServicoIdAsync(OrdemA);
 
         // Assert
         Assert.NotNull(lida);
         Assert.Equal(3, lida.VersaoVigente);
-        Assert.Equal("orc-10-3", lida.OrcamentoIdVigente);
+        Assert.Equal($"orc-{OrdemA}-3", lida.OrcamentoIdVigente);
         Assert.True(lida.Descartada);
     }
 
@@ -138,10 +144,10 @@ public class FirestoreGatewaysTests
     {
         // Arrange
         var gateway = new FirestoreOrdemOrcamentoGateway(_store);
-        await gateway.SalvarAsync(OrdemOrcamento.Criar(11));
+        await gateway.SalvarAsync(OrdemOrcamento.Criar(OrdemB));
 
         // Act
-        var lida = await gateway.GetByOrdemServicoIdAsync(11);
+        var lida = await gateway.GetByOrdemServicoIdAsync(OrdemB);
 
         // Assert
         Assert.NotNull(lida);
@@ -157,7 +163,7 @@ public class FirestoreGatewaysTests
         var gateway = new FirestoreOrdemOrcamentoGateway(_store);
 
         // Act
-        var lida = await gateway.GetByOrdemServicoIdAsync(404);
+        var lida = await gateway.GetByOrdemServicoIdAsync(OrdemInexistente);
 
         // Assert
         Assert.Null(lida);
@@ -168,7 +174,7 @@ public class FirestoreGatewaysTests
     {
         // Arrange
         var gateway = new FirestoreCobrancaGateway(_store);
-        var cobranca = Cobranca.CriarPendente("ord_1", 10, "orc-10-1", "key", 150.5m);
+        var cobranca = Cobranca.CriarPendente("ord_1", OrdemA, $"orc-{OrdemA}-1", "key", 150.5m);
         cobranca.RegistrarPix("qr", "ticket");
         cobranca.Confirmar();
 
@@ -178,8 +184,8 @@ public class FirestoreGatewaysTests
 
         // Assert
         Assert.NotNull(lida);
-        Assert.Equal(10, lida.OrdemServicoId);
-        Assert.Equal("orc-10-1", lida.OrcamentoId);
+        Assert.Equal(OrdemA, lida.OrdemServicoId);
+        Assert.Equal($"orc-{OrdemA}-1", lida.OrcamentoId);
         Assert.Equal("key", lida.IdempotencyKey);
         Assert.Equal(150.5m, lida.ValorTotal);
         Assert.Equal("qr", lida.QrCode);
@@ -197,7 +203,7 @@ public class FirestoreGatewaysTests
     {
         // Arrange
         var gateway = new FirestoreCobrancaGateway(_store);
-        var cobranca = Cobranca.CriarPendente($"ord_{status}", 10, "orc-10-1", "key", 10m);
+        var cobranca = Cobranca.CriarPendente($"ord_{status}", OrdemA, $"orc-{OrdemA}-1", "key", 10m);
         switch (status)
         {
             case CobrancaStatus.Recusada:
@@ -240,13 +246,13 @@ public class FirestoreGatewaysTests
     {
         // Arrange
         var gateway = new FirestoreCobrancaGateway(_store);
-        await gateway.SalvarAsync(Cobranca.CriarPendente("a", 10, "orc-10-1", "k1", 1m));
-        await gateway.SalvarAsync(Cobranca.CriarPendente("b", 10, "orc-10-1", "k2", 1m));
-        await gateway.SalvarAsync(Cobranca.CriarPendente("c", 11, "orc-11-1", "k3", 1m));
+        await gateway.SalvarAsync(Cobranca.CriarPendente("a", OrdemA, $"orc-{OrdemA}-1", "k1", 1m));
+        await gateway.SalvarAsync(Cobranca.CriarPendente("b", OrdemA, $"orc-{OrdemA}-1", "k2", 1m));
+        await gateway.SalvarAsync(Cobranca.CriarPendente("c", OrdemB, $"orc-{OrdemB}-1", "k3", 1m));
 
         // Act
-        var ordem10 = await gateway.ListarPorOrdemServicoAsync(10);
-        var ordem99 = await gateway.ListarPorOrdemServicoAsync(99);
+        var ordem10 = await gateway.ListarPorOrdemServicoAsync(OrdemA);
+        var ordem99 = await gateway.ListarPorOrdemServicoAsync(OrdemInexistente);
 
         // Assert
         Assert.Equal(["a", "b"], ordem10.Select(c => c.Id).OrderBy(id => id));

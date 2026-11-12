@@ -18,7 +18,7 @@ public sealed class FirestoreOrcamentoGateway(IDocumentRecordStore recordStore) 
         new()
         {
             ["id"] = orcamento.Id,
-            ["ordemServicoId"] = orcamento.OrdemServicoId,
+            ["ordemServicoId"] = orcamento.OrdemServicoId.ToString(),
             ["versaoDiagnostico"] = orcamento.VersaoDiagnostico,
             ["cliente"] = new Dictionary<string, object?>
             {
@@ -46,7 +46,7 @@ public sealed class FirestoreOrcamentoGateway(IDocumentRecordStore recordStore) 
         var orcamento = new Orcamento
         {
             Id = DocumentFields.GetString(fields, "id"),
-            OrdemServicoId = DocumentFields.GetInt(fields, "ordemServicoId"),
+            OrdemServicoId = DocumentFields.GetGuid(fields, "ordemServicoId"),
             VersaoDiagnostico = DocumentFields.GetInt(fields, "versaoDiagnostico"),
             Cliente = new ClienteOrcamento
             {

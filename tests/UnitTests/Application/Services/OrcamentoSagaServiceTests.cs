@@ -11,6 +11,10 @@ namespace UnitTests.Application.Services;
 
 public class OrcamentoSagaServiceTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("b4c5d6e7-8f90-4a1b-82c3-d4e5f6071829");
+    private static readonly Guid OutraOrdemServicoId = Guid.Parse("c5d6e7f8-90a1-4b2c-93d4-e5f607182930");
+    private static readonly Guid OrdemDescartadaId = Guid.Parse("d6e7f809-a1b2-4c3d-a4e5-f60718293041");
+
     private readonly InMemoryOrcamentoGateway _orcamentos = new();
     private readonly InMemoryOrdemOrcamentoGateway _ordens = new();
     private readonly InMemoryCobrancaGateway _cobrancas = new();
@@ -40,10 +44,10 @@ public class OrcamentoSagaServiceTests
             NullLogger<OrcamentoSagaService>.Instance);
     }
 
-    private static DiagnosticoFinalizadoData Diagnostico(int ordemId = 10, int versao = 1) =>
+    private static DiagnosticoFinalizadoData Diagnostico(Guid? ordemId = null, int versao = 1) =>
         new()
         {
-            OrdemServicoId = ordemId,
+            OrdemServicoId = ordemId ?? OrdemServicoId,
             VersaoDiagnostico = versao,
             Cliente = new DiagnosticoFinalizadoCliente
             {
@@ -70,18 +74,18 @@ public class OrcamentoSagaServiceTests
             ]
         };
 
-    private async Task<Orcamento> PrepararOrcamentoVigenteAsync(int ordemId = 10)
+    private async Task<Orcamento> PrepararOrcamentoVigenteAsync(Guid? ordemId = null)
     {
         await _service.ProcessarDiagnosticoFinalizadoAsync(Guid.NewGuid(), Diagnostico(ordemId));
-        return _orcamentos.Items[Orcamento.CriarId(ordemId, 1)];
+        return _orcamentos.Items[Orcamento.CriarId(ordemId ?? OrdemServicoId, 1)];
     }
 
-    private async Task<Cobranca> PrepararCobrancaPendenteAsync(int ordemId = 10)
+    private async Task<Cobranca> PrepararCobrancaPendenteAsync(Guid? ordemId = null)
     {
         await PrepararOrcamentoVigenteAsync(ordemId);
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = ordemId });
+            new OrdemServicoFinalizadaData { OrdemServicoId = ordemId ?? OrdemServicoId });
         return _cobrancas.Items.Values.Single();
     }
 
@@ -96,22 +100,22 @@ public class OrcamentoSagaServiceTests
 
         // Assert
         var orcamento = Assert.Single(_orcamentos.Items.Values);
-        Assert.Equal("orc-10-1", orcamento.Id);
+        Assert.Equal($"orc-{OrdemServicoId}-1", orcamento.Id);
         Assert.Equal(150m, orcamento.ValorTotal);
         Assert.Equal("Ada", orcamento.Cliente.Nome);
-        Assert.Equal("orc-10-1", _ordens.Items[10].OrcamentoIdVigente);
-        Assert.Equal(1, _ordens.Items[10].VersaoVigente);
+        Assert.Equal($"orc-{OrdemServicoId}-1", _ordens.Items[OrdemServicoId].OrcamentoIdVigente);
+        Assert.Equal(1, _ordens.Items[OrdemServicoId].VersaoVigente);
         _publisher.Verify(p => p.PublicarOrcamentoGeradoAsync(orcamento, It.IsAny<CancellationToken>()), Times.Once);
-        Assert.Contains(_eventos.Items, e => e.EventId == eventId && e.ChaveNegocio == "10:1");
+        Assert.Contains(_eventos.Items, e => e.EventId == eventId && e.ChaveNegocio == $"{OrdemServicoId}:1");
     }
 
     [Fact]
     public async Task DiagnosticoFinalizado_OrdemDescartada_NaoCriaOrcamentoEMarcaProcessado()
     {
         // Arrange
-        var ordem = OrdemOrcamento.Criar(10);
+        var ordem = OrdemOrcamento.Criar(OrdemServicoId);
         ordem.MarcarDescartada();
-        _ordens.Items[10] = ordem;
+        _ordens.Items[OrdemServicoId] = ordem;
         var eventId = Guid.NewGuid();
 
         // Act
@@ -166,8 +170,8 @@ public class OrcamentoSagaServiceTests
         await _service.ProcessarDiagnosticoFinalizadoAsync(Guid.NewGuid(), Diagnostico(versao: 2));
 
         // Assert
-        Assert.Equal("orc-10-2", _ordens.Items[10].OrcamentoIdVigente);
-        Assert.Equal(2, _ordens.Items[10].VersaoVigente);
+        Assert.Equal($"orc-{OrdemServicoId}-2", _ordens.Items[OrdemServicoId].OrcamentoIdVigente);
+        Assert.Equal(2, _ordens.Items[OrdemServicoId].VersaoVigente);
     }
 
     [Fact]
@@ -180,7 +184,7 @@ public class OrcamentoSagaServiceTests
         await _service.ProcessarDiagnosticoFinalizadoAsync(Guid.NewGuid(), Diagnostico(versao: 1));
 
         // Assert
-        Assert.Equal("orc-10-2", _ordens.Items[10].OrcamentoIdVigente);
+        Assert.Equal($"orc-{OrdemServicoId}-2", _ordens.Items[OrdemServicoId].OrcamentoIdVigente);
         Assert.Equal(2, _orcamentos.Items.Count);
     }
 
@@ -197,7 +201,7 @@ public class OrcamentoSagaServiceTests
         // Assert
         _publisher.Verify(
             p => p.PublicarOrcamentoFalhouAsync(
-                10,
+                OrdemServicoId,
                 1,
                 OrcamentoSagaService.MotivoFalhaPersistencia,
                 It.IsAny<CancellationToken>()),
@@ -221,7 +225,7 @@ public class OrcamentoSagaServiceTests
         await Assert.ThrowsAsync<OperationCanceledException>(act);
         _publisher.Verify(
             p => p.PublicarOrcamentoFalhouAsync(
-                It.IsAny<int>(),
+                It.IsAny<Guid>(),
                 It.IsAny<int>(),
                 It.IsAny<string>(),
                 It.IsAny<CancellationToken>()),
@@ -241,17 +245,17 @@ public class OrcamentoSagaServiceTests
         var eventId = Guid.NewGuid();
 
         // Act
-        await _service.ProcessarOrdemServicoFinalizadaAsync(eventId, new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+        await _service.ProcessarOrdemServicoFinalizadaAsync(eventId, new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         Assert.NotNull(capturado);
-        Assert.Equal(10, capturado.OrdemServicoId);
+        Assert.Equal(OrdemServicoId, capturado.OrdemServicoId);
         Assert.Equal(150m, capturado.ValorTotal);
         Assert.Equal("Ada", capturado.Cliente.Nome);
-        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(10, 1), capturado.IdempotencyKey);
+        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(OrdemServicoId, 1), capturado.IdempotencyKey);
         var cobranca = Assert.Single(_cobrancas.Items.Values);
         Assert.Equal("ord_mp_x", cobranca.Id);
-        Assert.Equal("orc-10-1", cobranca.OrcamentoId);
+        Assert.Equal($"orc-{OrdemServicoId}-1", cobranca.OrcamentoId);
         Assert.Equal("qr", cobranca.QrCode);
         Assert.Equal("ticket", cobranca.Ticket);
         _publisher.Verify(p => p.PublicarCobrancaGeradaAsync(cobranca, It.IsAny<CancellationToken>()), Times.Once);
@@ -270,7 +274,7 @@ public class OrcamentoSagaServiceTests
         // Act
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         var cobranca = Assert.Single(_cobrancas.Items.Values);
@@ -285,7 +289,7 @@ public class OrcamentoSagaServiceTests
         var eventId = Guid.NewGuid();
 
         // Act
-        await _service.ProcessarOrdemServicoFinalizadaAsync(eventId, new OrdemServicoFinalizadaData { OrdemServicoId = 99 });
+        await _service.ProcessarOrdemServicoFinalizadaAsync(eventId, new OrdemServicoFinalizadaData { OrdemServicoId = OutraOrdemServicoId });
 
         // Assert
         _mercadoPago.Verify(
@@ -304,7 +308,7 @@ public class OrcamentoSagaServiceTests
         // Act
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         Assert.Empty(_cobrancas.Items);
@@ -320,7 +324,7 @@ public class OrcamentoSagaServiceTests
         // Act
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         Assert.Empty(_cobrancas.Items);
@@ -332,7 +336,7 @@ public class OrcamentoSagaServiceTests
         // Arrange
         await PrepararOrcamentoVigenteAsync();
         var eventId = Guid.NewGuid();
-        var data = new OrdemServicoFinalizadaData { OrdemServicoId = 10 };
+        var data = new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId };
         await _service.ProcessarOrdemServicoFinalizadaAsync(eventId, data);
 
         // Act
@@ -351,13 +355,13 @@ public class OrcamentoSagaServiceTests
     {
         // Arrange
         await PrepararOrcamentoVigenteAsync();
-        var existente = Cobranca.CriarPendente("ord_prev", 10, "orc-10-1", "k", 150m);
+        var existente = Cobranca.CriarPendente("ord_prev", OrdemServicoId, $"orc-{OrdemServicoId}-1", "k", 150m);
         _cobrancas.Items[existente.Id] = existente;
 
         // Act
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         _mercadoPago.Verify(
@@ -371,14 +375,14 @@ public class OrcamentoSagaServiceTests
     {
         // Arrange
         await PrepararOrcamentoVigenteAsync();
-        var existente = Cobranca.CriarPendente("ord_prev", 10, "orc-10-1", "k", 150m);
+        var existente = Cobranca.CriarPendente("ord_prev", OrdemServicoId, $"orc-{OrdemServicoId}-1", "k", 150m);
         existente.Confirmar();
         _cobrancas.Items[existente.Id] = existente;
 
         // Act
         await _service.ProcessarOrdemServicoFinalizadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoFinalizadaData { OrdemServicoId = 10 });
+            new OrdemServicoFinalizadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         _publisher.Verify(
@@ -394,11 +398,11 @@ public class OrcamentoSagaServiceTests
         var eventId = Guid.NewGuid();
 
         // Act
-        await _service.ProcessarOrdemServicoDescartadaAsync(eventId, new OrdemServicoDescartadaData { OrdemServicoId = 10 });
+        await _service.ProcessarOrdemServicoDescartadaAsync(eventId, new OrdemServicoDescartadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
         Assert.Equal(OrcamentoStatus.Cancelado, orcamento.Status);
-        Assert.True(_ordens.Items[10].Descartada);
+        Assert.True(_ordens.Items[OrdemServicoId].Descartada);
         _mercadoPago.VerifyNoOtherCalls();
         Assert.Contains(_eventos.Items, e => e.EventId == eventId && e.Tipo == EventTypes.OrdemServicoDescartada);
     }
@@ -410,10 +414,10 @@ public class OrcamentoSagaServiceTests
         var eventId = Guid.NewGuid();
 
         // Act
-        await _service.ProcessarOrdemServicoDescartadaAsync(eventId, new OrdemServicoDescartadaData { OrdemServicoId = 55 });
+        await _service.ProcessarOrdemServicoDescartadaAsync(eventId, new OrdemServicoDescartadaData { OrdemServicoId = OrdemDescartadaId });
 
         // Assert
-        Assert.True(_ordens.Items[55].Descartada);
+        Assert.True(_ordens.Items[OrdemDescartadaId].Descartada);
         Assert.Empty(_orcamentos.Items);
         _mercadoPago.VerifyNoOtherCalls();
         Assert.Contains(_eventos.Items, e => e.EventId == eventId);
@@ -430,10 +434,10 @@ public class OrcamentoSagaServiceTests
         // Act
         await _service.ProcessarOrdemServicoDescartadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoDescartadaData { OrdemServicoId = 10 });
+            new OrdemServicoDescartadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
-        Assert.True(_ordens.Items[10].Descartada);
+        Assert.True(_ordens.Items[OrdemServicoId].Descartada);
     }
 
     [Fact]
@@ -446,10 +450,10 @@ public class OrcamentoSagaServiceTests
         // Act
         await _service.ProcessarOrdemServicoDescartadaAsync(
             Guid.NewGuid(),
-            new OrdemServicoDescartadaData { OrdemServicoId = 10 });
+            new OrdemServicoDescartadaData { OrdemServicoId = OrdemServicoId });
 
         // Assert
-        Assert.True(_ordens.Items[10].Descartada);
+        Assert.True(_ordens.Items[OrdemServicoId].Descartada);
     }
 
     [Fact]
@@ -457,7 +461,7 @@ public class OrcamentoSagaServiceTests
     {
         // Arrange
         var eventId = Guid.NewGuid();
-        var data = new OrdemServicoDescartadaData { OrdemServicoId = 10 };
+        var data = new OrdemServicoDescartadaData { OrdemServicoId = OrdemServicoId };
         await _service.ProcessarOrdemServicoDescartadaAsync(eventId, data);
 
         // Act
@@ -613,12 +617,12 @@ public class OrcamentoSagaServiceTests
         await _cobrancas.SalvarAsync(cobranca);
 
         // Act
-        var nova = await _service.GerarNovaCobrancaAposExpiracaoAsync(10);
+        var nova = await _service.GerarNovaCobrancaAposExpiracaoAsync(OrdemServicoId);
 
         // Assert
         Assert.Equal(CobrancaStatus.Pendente, nova.Status);
         Assert.Equal(2, _cobrancas.Items.Count);
-        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(10, 2), nova.IdempotencyKey);
+        Assert.Equal(OrcamentoSagaService.GerarIdempotencyKey(OrdemServicoId, 2), nova.IdempotencyKey);
         _publisher.Verify(p => p.PublicarCobrancaGeradaAsync(nova, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -629,7 +633,7 @@ public class OrcamentoSagaServiceTests
         await PrepararCobrancaPendenteAsync();
 
         // Act
-        var act = () => _service.GerarNovaCobrancaAposExpiracaoAsync(10);
+        var act = () => _service.GerarNovaCobrancaAposExpiracaoAsync(OrdemServicoId);
 
         // Assert
         await Assert.ThrowsAsync<BusinessRuleException>(act);
@@ -663,7 +667,7 @@ public class OrcamentoSagaServiceTests
     {
         // Arrange
         var cobranca = await PrepararCobrancaPendenteAsync();
-        _ordens.Items[10].MarcarDescartada();
+        _ordens.Items[OrdemServicoId].MarcarDescartada();
         _mercadoPago
             .Setup(m => m.ObterOrderAsync(cobranca.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new MercadoPagoOrder(cobranca.Id, MercadoPagoOrderSituacao.Recusada, null, null));
@@ -682,9 +686,9 @@ public class OrcamentoSagaServiceTests
     public void GerarIdempotencyKey_EhDeterministicoEDistintoPorTentativa()
     {
         // Arrange & Act
-        var primeira = OrcamentoSagaService.GerarIdempotencyKey(10, 1);
-        var repetida = OrcamentoSagaService.GerarIdempotencyKey(10, 1);
-        var segunda = OrcamentoSagaService.GerarIdempotencyKey(10, 2);
+        var primeira = OrcamentoSagaService.GerarIdempotencyKey(OrdemServicoId, 1);
+        var repetida = OrcamentoSagaService.GerarIdempotencyKey(OrdemServicoId, 1);
+        var segunda = OrcamentoSagaService.GerarIdempotencyKey(OrdemServicoId, 2);
 
         // Assert
         Assert.Equal(primeira, repetida);

@@ -4,7 +4,7 @@ namespace Application.Abstractions.Gateways;
 
 public interface IOrdemOrcamentoGateway
 {
-    Task<OrdemOrcamento?> GetByOrdemServicoIdAsync(int ordemServicoId, CancellationToken cancellationToken = default);
+    Task<OrdemOrcamento?> GetByOrdemServicoIdAsync(Guid ordemServicoId, CancellationToken cancellationToken = default);
 
     Task SalvarAsync(OrdemOrcamento ordem, CancellationToken cancellationToken = default);
 }

@@ -6,7 +6,7 @@ namespace Infrastructure.Firestore;
 public sealed class FirestoreOrdemOrcamentoGateway(IDocumentRecordStore recordStore) : IOrdemOrcamentoGateway
 {
     public async Task<OrdemOrcamento?> GetByOrdemServicoIdAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default)
     {
         var fields = await recordStore.GetAsync(FirestoreCollections.Ordens, DocumentId(ordemServicoId), cancellationToken);
@@ -19,19 +19,19 @@ public sealed class FirestoreOrdemOrcamentoGateway(IDocumentRecordStore recordSt
             DocumentId(ordem.OrdemServicoId),
             new Dictionary<string, object?>
             {
-                ["ordemServicoId"] = ordem.OrdemServicoId,
+                ["ordemServicoId"] = ordem.OrdemServicoId.ToString(),
                 ["versaoVigente"] = ordem.VersaoVigente,
                 ["orcamentoIdVigente"] = ordem.OrcamentoIdVigente,
                 ["descartada"] = ordem.Descartada
             },
             cancellationToken);
 
-    private static string DocumentId(int ordemServicoId) =>
-        ordemServicoId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private static string DocumentId(Guid ordemServicoId) =>
+        ordemServicoId.ToString();
 
     private static OrdemOrcamento ToEntity(IReadOnlyDictionary<string, object?> fields)
     {
-        var ordem = OrdemOrcamento.Criar(DocumentFields.GetInt(fields, "ordemServicoId"));
+        var ordem = OrdemOrcamento.Criar(DocumentFields.GetGuid(fields, "ordemServicoId"));
 
         var versao = DocumentFields.GetNullableInt(fields, "versaoVigente");
         var orcamentoId = DocumentFields.GetNullableString(fields, "orcamentoIdVigente");
