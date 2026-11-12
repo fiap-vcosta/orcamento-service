@@ -4,14 +4,16 @@ namespace UnitTests.Domain.Entities;
 
 public class OrdemOrcamentoTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("8d1e4b67-9a0c-4e35-93f2-6b7a8c9d0e45");
+
     [Fact]
     public void Criar_InicializaSemOrcamentoENaoDescartada()
     {
         // Arrange & Act
-        var ordem = OrdemOrcamento.Criar(10);
+        var ordem = OrdemOrcamento.Criar(OrdemServicoId);
 
         // Assert
-        Assert.Equal(10, ordem.OrdemServicoId);
+        Assert.Equal(OrdemServicoId, ordem.OrdemServicoId);
         Assert.Null(ordem.VersaoVigente);
         Assert.Null(ordem.OrcamentoIdVigente);
         Assert.False(ordem.Descartada);
@@ -21,7 +23,7 @@ public class OrdemOrcamentoTests
     public void RegistrarOrcamento_AtualizaPonteiroVigente()
     {
         // Arrange
-        var ordem = OrdemOrcamento.Criar(10);
+        var ordem = OrdemOrcamento.Criar(OrdemServicoId);
 
         // Act
         ordem.RegistrarOrcamento("orc-10-2", 2);
@@ -35,7 +37,7 @@ public class OrdemOrcamentoTests
     public void MarcarDescartada_SetaFlag()
     {
         // Arrange
-        var ordem = OrdemOrcamento.Criar(10);
+        var ordem = OrdemOrcamento.Criar(OrdemServicoId);
 
         // Act
         ordem.MarcarDescartada();

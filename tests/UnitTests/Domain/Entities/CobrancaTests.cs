@@ -4,7 +4,10 @@ namespace UnitTests.Domain.Entities;
 
 public class CobrancaTests
 {
-    private static Cobranca NovaCobranca() => Cobranca.CriarPendente("ord_1", 10, "orc-10-1", "key-1", 150m);
+    private static readonly Guid OrdemServicoId = Guid.Parse("3e8f1a24-5c6d-4b90-a7e1-2f4d6b8c0a13");
+
+    private static Cobranca NovaCobranca() =>
+        Cobranca.CriarPendente("ord_1", OrdemServicoId, $"orc-{OrdemServicoId}-1", "key-1", 150m);
 
     [Fact]
     public void CriarPendente_InicializaPendenteSemPix()
@@ -14,8 +17,8 @@ public class CobrancaTests
 
         // Assert
         Assert.Equal("ord_1", cobranca.Id);
-        Assert.Equal(10, cobranca.OrdemServicoId);
-        Assert.Equal("orc-10-1", cobranca.OrcamentoId);
+        Assert.Equal(OrdemServicoId, cobranca.OrdemServicoId);
+        Assert.Equal($"orc-{OrdemServicoId}-1", cobranca.OrcamentoId);
         Assert.Equal("key-1", cobranca.IdempotencyKey);
         Assert.Equal(150m, cobranca.ValorTotal);
         Assert.Equal(CobrancaStatus.Pendente, cobranca.Status);

@@ -4,7 +4,7 @@ public sealed class Cobranca
 {
     public required string Id { get; init; }
 
-    public required int OrdemServicoId { get; init; }
+    public required Guid OrdemServicoId { get; init; }
 
     public required string OrcamentoId { get; init; }
 
@@ -22,7 +22,7 @@ public sealed class Cobranca
 
     public static Cobranca CriarPendente(
         string cobrancaId,
-        int ordemServicoId,
+        Guid ordemServicoId,
         string orcamentoId,
         string idempotencyKey,
         decimal valorTotal) =>

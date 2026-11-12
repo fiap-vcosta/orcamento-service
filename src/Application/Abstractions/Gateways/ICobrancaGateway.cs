@@ -7,7 +7,7 @@ public interface ICobrancaGateway
     Task<Cobranca?> GetByIdAsync(string cobrancaId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Cobranca>> ListarPorOrdemServicoAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default);
 
     Task SalvarAsync(Cobranca cobranca, CancellationToken cancellationToken = default);

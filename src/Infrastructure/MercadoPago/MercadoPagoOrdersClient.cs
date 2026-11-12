@@ -24,7 +24,7 @@ public sealed class MercadoPagoOrdersClient(HttpClient httpClient, IOptions<Merc
         {
             ["type"] = "online",
             ["total_amount"] = valor,
-            ["external_reference"] = request.OrdemServicoId.ToString(CultureInfo.InvariantCulture),
+            ["external_reference"] = request.OrdemServicoId.ToString(),
             ["processing_mode"] = "automatic",
             ["transactions"] = new JsonObject
             {

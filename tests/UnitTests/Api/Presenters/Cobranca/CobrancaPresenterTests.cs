@@ -5,6 +5,8 @@ namespace UnitTests.Api.Presenters.Cobranca;
 
 public class CobrancaPresenterTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("9c4d8a10-6b7e-4f2a-8d31-0e5a7b9c1d22");
+
     [Fact]
     public void Present_MapeiaCampos()
     {
@@ -13,8 +15,8 @@ public class CobrancaPresenterTests
         var response = new GerarNovaCobrancaResponse
         {
             CobrancaId = "ord1",
-            OrdemServicoId = 9,
-            OrcamentoId = "orc-9-1",
+            OrdemServicoId = OrdemServicoId,
+            OrcamentoId = $"orc-{OrdemServicoId}-1",
             ValorTotal = 50m,
             QrCode = "qr",
             TicketUrl = "ticket",
@@ -26,8 +28,8 @@ public class CobrancaPresenterTests
 
         // Assert
         Assert.Equal("ord1", view.CobrancaId);
-        Assert.Equal(9, view.OrdemServicoId);
-        Assert.Equal("orc-9-1", view.OrcamentoId);
+        Assert.Equal(OrdemServicoId, view.OrdemServicoId);
+        Assert.Equal($"orc-{OrdemServicoId}-1", view.OrcamentoId);
         Assert.Equal(50m, view.ValorTotal);
         Assert.Equal("qr", view.QrCode);
         Assert.Equal("ticket", view.TicketUrl);

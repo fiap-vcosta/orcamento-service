@@ -25,7 +25,13 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
         return $"ts={ts},v1={Convert.ToHexString(hash).ToLowerInvariant()}";
     }
 
-    private async Task SemearCobrancaAsync(string cobrancaId, int ordemServicoId)
+    private static readonly Guid OrdemServico501 = Guid.Parse("00000000-0000-0000-0000-000000000501");
+    private static readonly Guid OrdemServico502 = Guid.Parse("00000000-0000-0000-0000-000000000502");
+    private static readonly Guid OrdemServico503 = Guid.Parse("00000000-0000-0000-0000-000000000503");
+    private static readonly Guid OrdemServico504 = Guid.Parse("00000000-0000-0000-0000-000000000504");
+    private static readonly Guid OrdemServico505 = Guid.Parse("00000000-0000-0000-0000-000000000505");
+
+    private async Task SemearCobrancaAsync(string cobrancaId, Guid ordemServicoId)
     {
         using var scope = factory.Services.CreateScope();
         var gateway = scope.ServiceProvider.GetRequiredService<ICobrancaGateway>();
@@ -69,7 +75,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        await SemearCobrancaAsync("ORD_UNSIGNED", 501);
+        await SemearCobrancaAsync("ORD_UNSIGNED", OrdemServico501);
         factory.MercadoPago.Orders["ORD_UNSIGNED"] = MercadoPagoOrderSituacao.Aprovada;
 
         // Act
@@ -88,7 +94,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        await SemearCobrancaAsync("ORD_APPROVED", 502);
+        await SemearCobrancaAsync("ORD_APPROVED", OrdemServico502);
         factory.MercadoPago.Orders["ORD_APPROVED"] = MercadoPagoOrderSituacao.Aprovada;
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -113,7 +119,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
     {
         // Arrange
         var client = factory.CreateClient();
-        await SemearCobrancaAsync("ORD_BAD_SIG", 503);
+        await SemearCobrancaAsync("ORD_BAD_SIG", OrdemServico503);
         factory.MercadoPago.Orders["ORD_BAD_SIG"] = MercadoPagoOrderSituacao.Aprovada;
         using var request = new HttpRequestMessage(
             HttpMethod.Post,
@@ -142,17 +148,17 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
             var orcamentos = scope.ServiceProvider.GetRequiredService<IOrcamentoGateway>();
             var ordens = scope.ServiceProvider.GetRequiredService<IOrdemOrcamentoGateway>();
             var orcamento = Orcamento.Criar(
-                504,
+                OrdemServico504,
                 1,
                 new ClienteOrcamento { Nome = "Ada Lovelace", Email = "ada@oficina.dev", Documento = "86421537090" },
                 [new OrcamentoServico { Id = 1, Nome = "Óleo", ValorCobrado = 100m, Status = "Aprovado" }]);
             await orcamentos.SalvarAsync(orcamento);
-            var ordem = OrdemOrcamento.Criar(504);
+            var ordem = OrdemOrcamento.Criar(OrdemServico504);
             ordem.RegistrarOrcamento(orcamento.Id, 1);
             await ordens.SalvarAsync(ordem);
         }
 
-        await SemearCobrancaAsync("ORD_EXPIRED", 504);
+        await SemearCobrancaAsync("ORD_EXPIRED", OrdemServico504);
         factory.MercadoPago.Orders["ORD_EXPIRED"] = MercadoPagoOrderSituacao.Expirada;
         var criacoesAntes = factory.MercadoPago.Criacoes.Count;
         using var request = new HttpRequestMessage(
@@ -188,26 +194,26 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
             var ordens = scope.ServiceProvider.GetRequiredService<IOrdemOrcamentoGateway>();
             var cobrancas = scope.ServiceProvider.GetRequiredService<ICobrancaGateway>();
             var orcamento = Orcamento.Criar(
-                505,
+                OrdemServico505,
                 1,
                 new ClienteOrcamento { Nome = "Ada Lovelace", Email = "ada@oficina.dev", Documento = "86421537090" },
                 [new OrcamentoServico { Id = 1, Nome = "Óleo", ValorCobrado = 100m, Status = "Aprovado" }]);
             await orcamentos.SalvarAsync(orcamento);
-            var ordem = OrdemOrcamento.Criar(505);
+            var ordem = OrdemOrcamento.Criar(OrdemServico505);
             ordem.RegistrarOrcamento(orcamento.Id, 1);
             await ordens.SalvarAsync(ordem);
-            var cobranca = Cobranca.CriarPendente("ORD_EXP_MANUAL", 505, orcamento.Id, "key-exp", 100m);
+            var cobranca = Cobranca.CriarPendente("ORD_EXP_MANUAL", OrdemServico505, orcamento.Id, "key-exp", 100m);
             cobranca.Expirar();
             await cobrancas.SalvarAsync(cobranca);
         }
 
         // Act
-        var response = await client.PostAsync("/orcamento/ordens/505/cobrancas", null);
+        var response = await client.PostAsync($"/orcamento/ordens/{OrdemServico505}/cobrancas", null);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.True(await AguardarPublicacaoAsync(TopicIds.CobrancaGerada));
-        Assert.Contains(factory.MercadoPago.Criacoes, c => c.OrdemServicoId == 505);
+        Assert.Contains(factory.MercadoPago.Criacoes, c => c.OrdemServicoId == OrdemServico505);
     }
 
     [Fact]
@@ -217,7 +223,7 @@ public class OrcamentoEndpointsTests(CustomWebApplicationFactory factory)
         var client = factory.CreateClient();
 
         // Act
-        var response = await client.PostAsync("/orcamento/ordens/505/cobrancas", null);
+        var response = await client.PostAsync($"/orcamento/ordens/{OrdemServico505}/cobrancas", null);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

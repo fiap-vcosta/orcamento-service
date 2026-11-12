@@ -12,8 +12,8 @@ namespace Api.Controllers.Staff.Cobranca;
 [Authorize(Policy = AuthPolicies.FuncionarioJwt)]
 public sealed class CobrancaController(IMediator mediator, CobrancaPresenter presenter) : ControllerBase
 {
-    [HttpPost("ordens/{ordemServicoId:int}/cobrancas")]
-    public async Task<IActionResult> GerarNova(int ordemServicoId)
+    [HttpPost("ordens/{ordemServicoId:guid}/cobrancas")]
+    public async Task<IActionResult> GerarNova(Guid ordemServicoId)
     {
         var response = await mediator.Send(new GerarNovaCobrancaCommand { OrdemServicoId = ordemServicoId });
         return Created(

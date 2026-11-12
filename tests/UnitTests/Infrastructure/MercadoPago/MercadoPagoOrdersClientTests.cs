@@ -50,10 +50,12 @@ public class MercadoPagoOrdersClientTests
         return (client, handler);
     }
 
+    private static readonly Guid OrdemServicoId = Guid.Parse("c6d7e8f9-1a2b-4c3d-8e4f-5a6b7c8d9e0f");
+
     private static CriarOrderPixRequest Request(string documento = "864.215.370-90") =>
         new(
             "key-123",
-            10,
+            OrdemServicoId,
             150m,
             new ClienteOrcamento { Nome = "Ada Lovelace", Email = "ada@oficina.dev", Documento = documento });
 
@@ -75,7 +77,7 @@ public class MercadoPagoOrdersClientTests
         var root = body.RootElement;
         Assert.Equal("online", root.GetProperty("type").GetString());
         Assert.Equal("150.00", root.GetProperty("total_amount").GetString());
-        Assert.Equal("10", root.GetProperty("external_reference").GetString());
+        Assert.Equal(OrdemServicoId.ToString(), root.GetProperty("external_reference").GetString());
         var payment = root.GetProperty("transactions").GetProperty("payments")[0];
         Assert.Equal("P1D", payment.GetProperty("expiration_time").GetString());
         Assert.Equal("pix", payment.GetProperty("payment_method").GetProperty("id").GetString());

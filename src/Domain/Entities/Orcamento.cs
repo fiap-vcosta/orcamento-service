@@ -4,7 +4,7 @@ public sealed class Orcamento
 {
     public required string Id { get; init; }
 
-    public required int OrdemServicoId { get; init; }
+    public required Guid OrdemServicoId { get; init; }
 
     public required int VersaoDiagnostico { get; init; }
 
@@ -18,11 +18,11 @@ public sealed class Orcamento
 
     public DateTimeOffset CriadoEm { get; init; } = DateTimeOffset.UtcNow;
 
-    public static string CriarId(int ordemServicoId, int versaoDiagnostico) =>
+    public static string CriarId(Guid ordemServicoId, int versaoDiagnostico) =>
         $"orc-{ordemServicoId}-{versaoDiagnostico}";
 
     public static Orcamento Criar(
-        int ordemServicoId,
+        Guid ordemServicoId,
         int versaoDiagnostico,
         ClienteOrcamento cliente,
         IReadOnlyList<OrcamentoServico> servicos)

@@ -26,10 +26,10 @@ public sealed class InMemoryOrcamentoGateway : IOrcamentoGateway
 
 public sealed class InMemoryOrdemOrcamentoGateway : IOrdemOrcamentoGateway
 {
-    public Dictionary<int, OrdemOrcamento> Items { get; } = new();
+    public Dictionary<Guid, OrdemOrcamento> Items { get; } = new();
 
     public Task<OrdemOrcamento?> GetByOrdemServicoIdAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult(Items.GetValueOrDefault(ordemServicoId));
 
@@ -48,7 +48,7 @@ public sealed class InMemoryCobrancaGateway : ICobrancaGateway
         Task.FromResult(Items.GetValueOrDefault(cobrancaId));
 
     public Task<IReadOnlyList<Cobranca>> ListarPorOrdemServicoAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<Cobranca>>(Items.Values.Where(c => c.OrdemServicoId == ordemServicoId).ToList());
 

@@ -239,7 +239,7 @@ public class OrcamentoSagaService(
     }
 
     public async Task<Cobranca> GerarNovaCobrancaAposExpiracaoAsync(
-        int ordemServicoId,
+        Guid ordemServicoId,
         CancellationToken cancellationToken = default)
     {
         var orcamento = await ObterOrcamentoVigenteAsync(ordemServicoId, cancellationToken);
@@ -265,18 +265,18 @@ public class OrcamentoSagaService(
         return await CriarCobrancaAsync(orcamento, existentes.Count, cancellationToken);
     }
 
-    public static string ChaveDiagnostico(int ordemServicoId, int versaoDiagnostico) =>
+    public static string ChaveDiagnostico(Guid ordemServicoId, int versaoDiagnostico) =>
         $"{ordemServicoId}:{versaoDiagnostico}";
 
-    public static string ChaveOrdem(int ordemServicoId) => ordemServicoId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    public static string ChaveOrdem(Guid ordemServicoId) => ordemServicoId.ToString();
 
-    public static string GerarIdempotencyKey(int ordemServicoId, int tentativa)
+    public static string GerarIdempotencyKey(Guid ordemServicoId, int tentativa)
     {
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"cobranca:{ordemServicoId}:{tentativa}"));
         return new Guid(hash.AsSpan(0, 16)).ToString();
     }
 
-    private async Task<Orcamento?> ObterOrcamentoVigenteAsync(int ordemServicoId, CancellationToken cancellationToken)
+    private async Task<Orcamento?> ObterOrcamentoVigenteAsync(Guid ordemServicoId, CancellationToken cancellationToken)
     {
         var ordem = await ordemGateway.GetByOrdemServicoIdAsync(ordemServicoId, cancellationToken);
         if (ordem is null || ordem.Descartada || ordem.OrcamentoIdVigente is null)

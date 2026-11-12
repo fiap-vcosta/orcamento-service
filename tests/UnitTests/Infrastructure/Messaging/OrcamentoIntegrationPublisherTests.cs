@@ -7,6 +7,9 @@ namespace UnitTests.Infrastructure.Messaging;
 
 public class OrcamentoIntegrationPublisherTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("d1e2f3a4-5b6c-4d7e-9f80-a1b2c3d4e5f6");
+    private static readonly Guid OutraOrdemServicoId = Guid.Parse("e2f3a4b5-6c7d-4e8f-a091-b2c3d4e5f607");
+
     private readonly RecordingEventPublisher _events = new();
     private readonly OrcamentoIntegrationPublisher _publisher;
 
@@ -17,7 +20,7 @@ public class OrcamentoIntegrationPublisherTests
 
     private static Cobranca CobrancaComPix()
     {
-        var cobranca = Cobranca.CriarPendente("ord_1", 10, "orc-10-1", "key", 150m);
+        var cobranca = Cobranca.CriarPendente("ord_1", OrdemServicoId, $"orc-{OrdemServicoId}-1", "key", 150m);
         cobranca.RegistrarPix("qr", "ticket");
         return cobranca;
     }
@@ -27,7 +30,7 @@ public class OrcamentoIntegrationPublisherTests
     {
         // Arrange
         var orcamento = Orcamento.Criar(
-            10,
+            OrdemServicoId,
             1,
             new ClienteOrcamento { Nome = "Ada", Email = "a@b.c", Documento = "1" },
             [
@@ -44,7 +47,7 @@ public class OrcamentoIntegrationPublisherTests
         Assert.Equal(TopicIds.OrcamentoGerado, gerado.TopicId);
         Assert.Equal(EventTypes.OrcamentoGerado, gerado.EventType);
         var geradoData = Assert.IsType<OrcamentoGeradoData>(gerado.Data);
-        Assert.Equal("orc-10-1", geradoData.OrcamentoId);
+        Assert.Equal($"orc-{OrdemServicoId}-1", geradoData.OrcamentoId);
         Assert.Equal(1, geradoData.VersaoDiagnostico);
         var notificacao = _events.Published[1];
         Assert.Equal(TopicIds.Notificacoes, notificacao.TopicId);
@@ -59,14 +62,14 @@ public class OrcamentoIntegrationPublisherTests
     public async Task PublicarOrcamentoFalhou_PublicaMotivo()
     {
         // Arrange & Act
-        await _publisher.PublicarOrcamentoFalhouAsync(10, 2, "falha");
+        await _publisher.PublicarOrcamentoFalhouAsync(OrdemServicoId, 2, "falha");
 
         // Assert
         var published = Assert.Single(_events.Published);
         Assert.Equal(TopicIds.OrcamentoFalhou, published.TopicId);
         Assert.Equal(EventTypes.OrcamentoFalhou, published.EventType);
         var data = Assert.IsType<OrcamentoFalhouData>(published.Data);
-        Assert.Equal(10, data.OrdemServicoId);
+        Assert.Equal(OrdemServicoId, data.OrdemServicoId);
         Assert.Equal(2, data.VersaoDiagnostico);
         Assert.Equal("falha", data.Motivo);
     }
@@ -97,7 +100,7 @@ public class OrcamentoIntegrationPublisherTests
     public async Task PublicarCobrancaGerada_SemPix_UsaTextoVazio()
     {
         // Arrange
-        var cobranca = Cobranca.CriarPendente("ord_2", 11, "orc-11-1", "key", 10m);
+        var cobranca = Cobranca.CriarPendente("ord_2", OutraOrdemServicoId, $"orc-{OutraOrdemServicoId}-1", "key", 10m);
 
         // Act
         await _publisher.PublicarCobrancaGeradaAsync(cobranca);
@@ -122,7 +125,7 @@ public class OrcamentoIntegrationPublisherTests
         Assert.Equal(TopicIds.PagamentoConfirmado, published.TopicId);
         Assert.Equal(EventTypes.PagamentoConfirmado, published.EventType);
         var data = Assert.IsType<PagamentoConfirmadoData>(published.Data);
-        Assert.Equal(10, data.OrdemServicoId);
+        Assert.Equal(OrdemServicoId, data.OrdemServicoId);
         Assert.Equal("ord_1", data.CobrancaId);
     }
 

@@ -4,6 +4,8 @@ namespace UnitTests.Domain.Entities;
 
 public class OrcamentoTests
 {
+    private static readonly Guid OrdemServicoId = Guid.Parse("5a2c7e90-1d3b-4f68-b4a5-8c9e0f1a2b34");
+
     private static readonly ClienteOrcamento Cliente = new()
     {
         Nome = "Ada",
@@ -23,11 +25,11 @@ public class OrcamentoTests
         };
 
         // Act
-        var orcamento = Orcamento.Criar(10, 2, Cliente, servicos);
+        var orcamento = Orcamento.Criar(OrdemServicoId, 2, Cliente, servicos);
 
         // Assert
-        Assert.Equal("orc-10-2", orcamento.Id);
-        Assert.Equal(10, orcamento.OrdemServicoId);
+        Assert.Equal($"orc-{OrdemServicoId}-2", orcamento.Id);
+        Assert.Equal(OrdemServicoId, orcamento.OrdemServicoId);
         Assert.Equal(2, orcamento.VersaoDiagnostico);
         Assert.Equal(200m, orcamento.ValorTotal);
         Assert.Equal([1, 3], orcamento.Servicos.Select(s => s.Id));
@@ -42,7 +44,7 @@ public class OrcamentoTests
         OrcamentoServico[] servicos = [];
 
         // Act
-        var orcamento = Orcamento.Criar(1, 1, Cliente, servicos);
+        var orcamento = Orcamento.Criar(OrdemServicoId, 1, Cliente, servicos);
 
         // Assert
         Assert.Equal(0m, orcamento.ValorTotal);
@@ -53,17 +55,17 @@ public class OrcamentoTests
     public void CriarId_UsaPadraoOrcOrdemVersao()
     {
         // Arrange & Act
-        var id = Orcamento.CriarId(7, 3);
+        var id = Orcamento.CriarId(OrdemServicoId, 3);
 
         // Assert
-        Assert.Equal("orc-7-3", id);
+        Assert.Equal($"orc-{OrdemServicoId}-3", id);
     }
 
     [Fact]
     public void Cancelar_MarcaComoCancelado()
     {
         // Arrange
-        var orcamento = Orcamento.Criar(1, 1, Cliente, []);
+        var orcamento = Orcamento.Criar(OrdemServicoId, 1, Cliente, []);
 
         // Act
         orcamento.Cancelar();
