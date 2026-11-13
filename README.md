@@ -1,6 +1,7 @@
 # orcamento-service
 
 [![Quality Gate](https://sonarcloud.io/api/project_badges/quality_gate?project=fiap-vcosta_orcamento-service)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
 [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
 [![Security](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
 [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=fiap-vcosta_orcamento-service&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=fiap-vcosta_orcamento-service)
@@ -10,7 +11,10 @@ Serviço de orçamento e cobrança Pix da oficina (Mercado Pago Orders). Gera o 
 
 Stack: .NET 8, Firestore (database nomeado) e Pub/Sub. Org [fiap-vcosta](https://github.com/fiap-vcosta).
 
-Requisitos: [docs/01_requisitos.md](docs/01_requisitos.md).
+- Requisitos: [`docs/01_requisitos.md`](docs/01_requisitos.md)
+- Domínio (linguagem + modelo): [`e2e` / docs/dominio/orcamento](https://github.com/fiap-vcosta/e2e/blob/main/docs/dominio/orcamento.md)
+- ADR Mercado Pago Orders/Pix: [`docs/adrs/001-mercado-pago-orders-pix.md`](docs/adrs/001-mercado-pago-orders-pix.md)
+- Firestore nomeado: [`e2e` ADR 002](https://github.com/fiap-vcosta/e2e/blob/main/docs/adrs/002-firestore-databases-nomeados.md)
 
 ## Paths
 
@@ -33,10 +37,12 @@ export FIRESTORE_EMULATOR_HOST=127.0.0.1:8087
 export PUBSUB_EMULATOR_HOST=127.0.0.1:8088
 dotnet run --project src/Api/Api.csproj
 # → http://localhost:8080/orcamento/health
+# Swagger: http://localhost:8080/swagger
 
 # API + emuladores no Compose (porta 8084)
 docker compose --profile app up --build
 # → http://localhost:8084/orcamento/health
+# Swagger: http://localhost:8084/swagger
 ```
 
 Portas do Compose: API `8084`, Firestore host `8087`, Pub/Sub host `8088`.
@@ -51,7 +57,7 @@ Workers Pub/Sub usam o emulador (`PUBSUB_EMULATOR_HOST`; `building-blocks` ≥ 1
 
 Webhook assinado (Requestly): manifest `id:{dataId};request-id:{xRequestId};ts:{ts};` com `dataId` em minúsculas; `x-signature` = `ts={ts},v1={hmac_sha256_hex(secret, manifest)}`. Preencha `webhookSecret` e `xSignature` só na UI — valores vazios no JSON commitado.
 
-Requestly: importar [`docs/requestly/orcamento.requestly.json`](docs/requestly/orcamento.requestly.json).
+Requestly deste serviço: [`docs/requestly/`](docs/requestly/). Sistema: [`e2e/docs/requestly/`](https://github.com/fiap-vcosta/e2e/tree/main/docs/requestly).
 
 Credenciais de sandbox do Mercado Pago ficam no `.env` local e, na GCP, em org secrets do GitHub (`MERCADO_PAGO_ACCESS_TOKEN`, `MERCADO_PAGO_WEBHOOK_SECRET`) — nunca no Git.
 
@@ -87,6 +93,8 @@ Root module: [`terraform/`](terraform/). State GCS prefix `orcamento-service`.
 | Subscriptions + DLQ | `orcamento-diagnostico-finalizado`, `orcamento-ordem-servico-finalizada`, `orcamento-ordem-servico-descartada` |
 | Publisher IAM | tópicos de orçamento/cobrança/pagamento + `notificacoes` |
 | `orcamento-notificacoes-inspecao` | inspeção no tópico `notificacoes` (retenção 1 dia, sem worker) |
+
+`tf-apply` / `tf-destroy` / `deploy` são **manuais de propósito** (custo da janela GCP). CI e `build-push` seguem automáticos. Narrativa: [`e2e` ADR 006](https://github.com/fiap-vcosta/e2e/blob/main/docs/adrs/006-deploy-demo-manuais-custo.md).
 
 ## CD (GCP)
 
